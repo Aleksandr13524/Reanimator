@@ -2,20 +2,19 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>REANIMATOR — комп'ютерний сервіс в Одесі</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
 
     <!-- Шрифти Google -->
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet" />
 
     <style>
+        /* --- Глобальні стилі --- */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
         body {
             background: #0a0a0a;
             overflow: hidden;
@@ -23,8 +22,10 @@
             color: #21d63b;
             user-select: none;
             -webkit-user-select: none;
+            touch-action: none;
         }
 
+        /* Контейнери для рендерерів */
         #webgl-container {
             position: fixed;
             top: 0;
@@ -33,7 +34,6 @@
             height: 100vh;
             z-index: 0;
         }
-
         #css-container {
             position: fixed;
             top: 0;
@@ -42,9 +42,13 @@
             height: 100vh;
             z-index: 1;
             pointer-events: none;
+            /* CSS3D-об'єкти отримають pointer-events: auto через стилі */;
+        }
+        #css-container .css3d-object {
+            pointer-events: auto;
         }
 
-        /* HUD */
+        /* --- HUD (поверх всього) --- */
         #hud {
             position: fixed;
             top: 0;
@@ -59,14 +63,12 @@
             padding: 20px 30px;
         }
 
+        /* Верхній рядок */
         .hud-top {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            flex-wrap: wrap;
-            gap: 10px;
         }
-
         .hud-logo {
             font-family: 'Rajdhani', sans-serif;
             font-weight: 700;
@@ -80,7 +82,6 @@
             border-radius: 4px;
             backdrop-filter: blur(4px);
         }
-
         .hud-status {
             font-family: 'Share Tech Mono', monospace;
             font-size: 1rem;
@@ -94,6 +95,7 @@
             text-shadow: 0 0 8px #21d63b66;
         }
 
+        /* Тікер новин */
         .hud-ticker {
             font-family: 'Share Tech Mono', monospace;
             font-size: 0.85rem;
@@ -110,17 +112,20 @@
             border-radius: 0 12px 12px 0;
             text-shadow: 0 0 6px #21d63b44;
         }
-
         .ticker-text {
             display: inline-block;
             animation: tickerScroll 18s linear infinite;
         }
-
         @keyframes tickerScroll {
-            0% { transform: translateX(100%); }
-            100% { transform: translateX(-100%); }
+            0% {
+                transform: translateX(100%);
+            }
+            100% {
+                transform: translateX(-100%);
+            }
         }
 
+        /* Навігація (кнопки) */
         .hud-nav {
             display: flex;
             gap: 12px;
@@ -130,7 +135,6 @@
             justify-content: center;
             margin-bottom: 10px;
         }
-
         .hud-nav button {
             font-family: 'Share Tech Mono', monospace;
             font-size: 1rem;
@@ -147,7 +151,6 @@
             letter-spacing: 1px;
             touch-action: manipulation;
         }
-
         .hud-nav button:hover,
         .hud-nav button:active {
             background: #21d63b22;
@@ -156,15 +159,14 @@
             transform: scale(1.04);
         }
 
+        /* Нижній рядок HUD */
         .hud-bottom {
             display: flex;
             justify-content: center;
             pointer-events: none;
-            flex-direction: column;
-            align-items: center;
         }
 
-        /* CSS3D панелі */
+        /* --- Стилі для CSS3D-панелей (контент в 3D) --- */
         .panel-3d {
             width: 420px;
             max-width: 90vw;
@@ -180,10 +182,7 @@
             transition: box-shadow 0.3s;
             overflow-y: auto;
             max-height: 80vh;
-            touch-action: pan-y;
-            -webkit-overflow-scrolling: touch;
         }
-
         .panel-3d h2 {
             font-family: 'Rajdhani', sans-serif;
             font-weight: 700;
@@ -195,95 +194,97 @@
             border-bottom: 1px solid #21d63b33;
             padding-bottom: 8px;
         }
-
         .panel-3d p,
         .panel-3d li {
             font-size: 1rem;
             line-height: 1.6;
             color: #ccf0cc;
         }
-
         .panel-3d ul {
             list-style: none;
             padding: 0;
         }
-
         .panel-3d li {
             padding: 6px 0;
             border-bottom: 1px solid #21d63b1a;
             display: flex;
             justify-content: space-between;
-            gap: 10px;
         }
-
         .panel-3d .price {
             color: #21d63b;
             font-weight: 700;
             text-shadow: 0 0 8px #21d63b44;
         }
-
         .panel-3d .highlight {
             color: #21d63b;
             font-weight: 600;
         }
-
         .panel-3d .phone {
             font-size: 1.2rem;
             color: #21d63b;
             letter-spacing: 1px;
         }
 
+        /* Адаптивність для малих екранів */
         @media (max-width: 640px) {
             .panel-3d {
                 width: 320px;
                 padding: 20px;
                 font-size: 0.9rem;
             }
-            .panel-3d h2 { font-size: 1.4rem; }
-            .hud-logo { font-size: 1.6rem; padding: 4px 12px; }
-            .hud-status { font-size: 0.75rem; padding: 4px 10px; }
-            .hud-nav button { font-size: 0.8rem; padding: 6px 14px; }
-            .hud-ticker { font-size: 0.7rem; padding: 4px 12px; }
+            .panel-3d h2 {
+                font-size: 1.4rem;
+            }
+            .hud-logo {
+                font-size: 1.6rem;
+                padding: 4px 12px;
+            }
+            .hud-status {
+                font-size: 0.75rem;
+                padding: 4px 10px;
+            }
+            .hud-nav button {
+                font-size: 0.8rem;
+                padding: 6px 14px;
+            }
+            .hud-ticker {
+                font-size: 0.7rem;
+                padding: 4px 12px;
+            }
         }
-
         @media (max-width: 400px) {
-            .panel-3d { width: 280px; padding: 14px; }
+            .panel-3d {
+                width: 280px;
+                padding: 14px;
+            }
         }
 
-        .panel-3d::-webkit-scrollbar { width: 4px; }
-        .panel-3d::-webkit-scrollbar-track { background: transparent; }
-        .panel-3d::-webkit-scrollbar-thumb { background: #21d63b66; border-radius: 4px; }
+        /* Скроллбар для панелей */
+        .panel-3d::-webkit-scrollbar {
+            width: 4px;
+        }
+        .panel-3d::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .panel-3d::-webkit-scrollbar-thumb {
+            background: #21d63b66;
+            border-radius: 4px;
+        }
 
+        /* Заборона виділення тексту всередині панелей */
         .panel-3d * {
             user-select: text;
             -webkit-user-select: text;
         }
-
-        /* Кнопка запиту гіроскопа (iOS) */
-        #gyro-permission {
-            position: fixed;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 20;
-            pointer-events: auto;
-            background: rgba(0,0,0,0.8);
-            color: #21d63b;
-            border: 1px solid #21d63b;
-            padding: 8px 20px;
-            border-radius: 20px;
-            font-family: 'Share Tech Mono', monospace;
-            cursor: pointer;
-            display: none;
-        }
     </style>
 </head>
 <body>
-    <!-- HUD -->
+
+    <!-- ========== HUD (HTML поверх) ========== -->
     <div id="hud">
         <div class="hud-top">
             <div class="hud-logo">⚡ REANIMATOR</div>
-            <div class="hud-status">ОДЕСА NODE</div>
+            <div class="hud-status">ОДЕССА NODE</div>
         </div>
         <div style="flex:1;"></div>
         <div class="hud-ticker">
@@ -298,238 +299,239 @@
         </div>
     </div>
 
+    <!-- ========== Контейнери для рендерерів ========== -->
     <div id="webgl-container"></div>
     <div id="css-container"></div>
 
-    <button id="gyro-permission">📱 Дозволити рух</button>
-
-    <!-- Бібліотеки -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FontLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/TextGeometry.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/renderers/CSS3DRenderer.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <!-- ========== Підключення CDN ========== -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FontLoader.js">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/TextGeometry.js">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/renderers/CSS3DRenderer.js">
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js">
+    </script>
 
     <script>
+        // ====================================================================
+        //  Головний скрипт
+        // ====================================================================
+
         (function() {
             'use strict';
 
-            // ---------- ГЛОБАЛЬНІ КОНСТАНТИ ----------
-            const RAIN_WIDTH = 18;
-            const RAIN_HEIGHT = 12;
+            // --- Константи та змінні ---
             const PANEL_POSITIONS = [
-                { x: 0, z: -6 },
-                { x: 7, z: -5.5 },
-                { x: -7, z: -5.5 }
+                { x: 0, z: -6 }, // Головна
+                { x: 7, z: -5.5 }, // Послуги
+                { x: -7, z: -5.5 } // Гарантія
             ];
+
             const CAMERA_BASE = [
                 { x: 0, y: 0.8, z: 2.5 },
                 { x: 7, y: 0.8, z: 2.5 },
                 { x: -7, y: 0.8, z: 2.5 }
             ];
 
-            // Стан навігації
             let currentPanel = 0;
             let targetCameraPos = { ...CAMERA_BASE[0] };
             let targetLookAt = { x: PANEL_POSITIONS[0].x, y: 0, z: PANEL_POSITIONS[0].z };
-            let isAnimating = false;
 
-            // Паралакс гіроскопа
-            let gyroOffsetX = 0, gyroOffsetY = 0;
-            const GYRO_MAX = 1.2;
+            // Паралакс від гіроскопа (накопичувальне зміщення)
+            let gyroOffsetX = 0;
+            let gyroOffsetY = 0;
+            const GYRO_MAX = 1.2; // максимальне зміщення в одиницях
 
-            // ---------- СЦЕНА ТА РЕНДЕРЕРИ ----------
+            // --- Ініціалізація Three.js ---
             const webglContainer = document.getElementById('webgl-container');
             const cssContainer = document.getElementById('css-container');
 
+            // Сцена WebGL
             const webglScene = new THREE.Scene();
             webglScene.background = new THREE.Color(0x0a0a0a);
-            webglScene.fog = new THREE.FogExp2(0x0a0a0a, 0.03);
 
+            // Сцена CSS3D
             const cssScene = new THREE.Scene();
 
+            // Камера (спільна для обох рендерерів)
             const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
             camera.position.set(0, 0.8, 2.5);
             camera.lookAt(0, 0, -6);
 
-            // WebGLRenderer
-            const webglRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
+            // WebGL рендерер
+            const webglRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
             webglRenderer.setSize(window.innerWidth, window.innerHeight);
             webglRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             webglRenderer.shadowMap.enabled = true;
             webglRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
             webglContainer.appendChild(webglRenderer.domElement);
 
-            // CSS3DRenderer
+            // CSS3D рендерер
             const cssRenderer = new THREE.CSS3DRenderer();
             cssRenderer.setSize(window.innerWidth, window.innerHeight);
             cssRenderer.domElement.style.position = 'absolute';
             cssRenderer.domElement.style.top = '0';
             cssRenderer.domElement.style.left = '0';
-            cssRenderer.domElement.style.pointerEvents = 'none';
+            cssRenderer.domElement.style.pointerEvents = 'none'; // події через панелі
             cssContainer.appendChild(cssRenderer.domElement);
 
-            // Постобробка (Bloom)
-            const renderScene = new RenderPass(webglScene, camera);
-            const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
-            bloomPass.threshold = 0.2;
-            bloomPass.strength = 1.2;
-            bloomPass.radius = 0.5;
-            const composer = new EffectComposer(webglRenderer);
-            composer.addPass(renderScene);
-            composer.addPass(bloomPass);
+            // Дозволити кліки на CSS3D-об'єктах
+            cssRenderer.domElement.style.pointerEvents = 'none';
+            // Але самі панелі отримають pointer-events: auto через клас .css3d-object
 
-            // ---------- ОСВІТЛЕННЯ ----------
-            const ambient = new THREE.AmbientLight(0x404060, 0.5);
-            webglScene.add(ambient);
-            const dirLight = new THREE.DirectionalLight(0x88ffaa, 0.7);
+            // --- Освітлення ---
+            const ambientLight = new THREE.AmbientLight(0x404060, 0.4);
+            webglScene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0x88ffaa, 0.8);
             dirLight.position.set(2, 5, 4);
             dirLight.castShadow = true;
-            dirLight.shadow.mapSize.width = 1024;
-            dirLight.shadow.mapSize.height = 1024;
-            dirLight.shadow.camera.near = 0.5;
-            dirLight.shadow.camera.far = 30;
-            dirLight.shadow.camera.left = -10;
-            dirLight.shadow.camera.right = 10;
-            dirLight.shadow.camera.top = 10;
-            dirLight.shadow.camera.bottom = -10;
             webglScene.add(dirLight);
-            const backLight = new THREE.DirectionalLight(0x21d63b, 0.4);
+
+            const backLight = new THREE.DirectionalLight(0x21d63b, 0.3);
             backLight.position.set(-2, 1, -6);
             webglScene.add(backLight);
-            const pointLight = new THREE.PointLight(0x21d63b, 0.6, 15);
+
+            const pointLight = new THREE.PointLight(0x21d63b, 0.6, 12);
             pointLight.position.set(0, 3, -4);
             webglScene.add(pointLight);
 
-            // ---------- МАТРИЧНИЙ ДОЩ (BufferGeometry + Points) ----------
-            const symbols = ['ｱ','ｲ','ｳ','ｴ','ｵ','0','1','ﾘ','ﾇ','ﾏ','+','-','*','/'];
-            const canvas = document.createElement('canvas');
-            canvas.width = 64;
-            canvas.height = 64;
-            const ctx = canvas.getContext('2d');
-            let rainTexture = new THREE.CanvasTexture(canvas);
+            // --- 1. Матричний дождь (WebGL) ---
+            function createMatrixRain() {
+                const COLUMNS = 85;
+                const DROPS_PER_COLUMN = 28;
+                const WIDTH = 18;
+                const HEIGHT = 12;
 
-            function drawRandomSymbol() {
-                ctx.clearRect(0, 0, 64, 64);
-                const s = symbols[Math.floor(Math.random() * symbols.length)];
-                ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 48px "Share Tech Mono", monospace';
+                // Створюємо текстуру з символами
+                const canvas = document.createElement('canvas');
+                canvas.width = 64;
+                canvas.height = 64;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = 'transparent';
+                ctx.fillRect(0, 0, 64, 64);
+                ctx.font = 'bold 42px "Share Tech Mono", monospace';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText(s, 32, 32);
-                rainTexture.needsUpdate = true;
-            }
-            drawRandomSymbol();
 
-            function createMatrixRain() {
-                const columns = 80;
-                const dropsPerColumn = 25;
-                const totalDrops = columns * dropsPerColumn;
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+{}[]';
+                const texture = new THREE.CanvasTexture(canvas);
 
-                const positions = new Float32Array(totalDrops * 3);
-                const colors = new Float32Array(totalDrops * 3);
-                const speeds = new Float32Array(totalDrops);
-                const columnX = new Float32Array(totalDrops);
+                // Створюємо спрайти для кожної краплі
+                const drops = [];
+                const columnWidth = WIDTH / COLUMNS;
 
-                const colWidth = RAIN_WIDTH / columns;
-                let idx = 0;
-                for (let c = 0; c < columns; c++) {
-                    const baseX = -RAIN_WIDTH/2 + c * colWidth + colWidth/2 + (Math.random() - 0.5) * colWidth * 0.6;
-                    for (let i = 0; i < dropsPerColumn; i++) {
-                        const y = (Math.random() * 2 - 1) * RAIN_HEIGHT;
-                        positions[idx * 3] = baseX;
-                        positions[idx * 3 + 1] = y;
-                        positions[idx * 3 + 2] = -4 + Math.random() * 3 - 1.5;
-                        columnX[idx] = baseX;
-                        speeds[idx] = 0.015 + Math.random() * 0.045;
-                        colors[idx * 3] = 0.2;
-                        colors[idx * 3 + 1] = 0.9;
-                        colors[idx * 3 + 2] = 0.3;
-                        idx++;
+                for (let c = 0; c < COLUMNS; c++) {
+                    const x = -WIDTH / 2 + c * columnWidth + columnWidth / 2 + (Math.random() - 0.5) * columnWidth * 0.6;
+                    const count = Math.floor(Math.random() * DROPS_PER_COLUMN * 0.8 + DROPS_PER_COLUMN * 0.2);
+                    for (let i = 0; i < count; i++) {
+                        const y = (Math.random() - 0.5) * HEIGHT * 1.8;
+                        const speed = 0.02 + Math.random() * 0.04;
+                        const char = chars[Math.floor(Math.random() * chars.length)];
+                        // Малюємо символ на текстурі
+                        ctx.clearRect(0, 0, 64, 64);
+                        ctx.fillStyle = '#eeffee';
+                        ctx.fillText(char, 32, 32);
+                        texture.needsUpdate = true;
+
+                        const material = new THREE.SpriteMaterial({
+                            map: texture,
+                            transparent: true,
+                            opacity: 0.9,
+                            depthWrite: false,
+                            blending: THREE.AdditiveBlending,
+                            color: new THREE.Color(0x21d63b)
+                        });
+                        const sprite = new THREE.Sprite(material);
+                        sprite.position.set(x, y, -4 + Math.random() * 2 - 1);
+                        sprite.scale.set(0.18, 0.18, 1);
+
+                        // Зберігаємо дані
+                        drops.push({
+                            sprite: sprite,
+                            x: x,
+                            y: y,
+                            speed: speed,
+                            char: char,
+                            columnIndex: c,
+                            // для зміни кольору: голова біла
+                            isHead: false,
+                            headTimer: 0
+                        });
+                        webglScene.add(sprite);
                     }
                 }
 
-                const geometry = new THREE.BufferGeometry();
-                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-                geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-                const material = new THREE.PointsMaterial({
-                    map: rainTexture,
-                    size: 0.22,
-                    blending: THREE.AdditiveBlending,
-                    depthWrite: false,
-                    vertexColors: true,
-                    transparent: true,
-                    opacity: 0.9
-                });
-
-                const points = new THREE.Points(geometry, material);
-                webglScene.add(points);
-                return { points, speeds, columnX, positions, colors, columns, dropsPerColumn, totalDrops };
+                // Позначимо "голови" колонок (найвищі точки)
+                // Для простоти будемо в кожному кадрі визначати голову як найвищу краплю в колонці
+                // Але зберігаємо посилання на всі краплі
+                return drops;
             }
 
-            const rainSystem = createMatrixRain();
-            let rainSymbolTimer = 0;
+            const rainDrops = createMatrixRain();
 
-            function updateRain(deltaTime) {
-                const { positions, speeds, columnX, colors, columns, dropsPerColumn, totalDrops } = rainSystem;
-                const halfH = RAIN_HEIGHT / 2;
-                const bottom = -halfH - 0.5;
-                const top = halfH + 0.5;
+            // Функція оновлення дождю
+            function updateRain() {
+                const HEIGHT = 12;
+                const halfH = HEIGHT / 2;
 
-                // Знаходимо "голову" кожної колонки
-                const columnMaxIdx = new Array(columns).fill(-1);
-                const columnMaxY = new Array(columns).fill(-Infinity);
-                for (let i = 0; i < totalDrops; i++) {
-                    const y = positions[i * 3 + 1];
-                    const col = Math.floor((columnX[i] + RAIN_WIDTH/2) / (RAIN_WIDTH / columns));
-                    if (col >= 0 && col < columns && y > columnMaxY[col]) {
-                        columnMaxY[col] = y;
-                        columnMaxIdx[col] = i;
+                // Для кожної колонки знайдемо найвищу точку (голову)
+                const columnHeads = {};
+                for (const drop of rainDrops) {
+                    const key = Math.round(drop.x * 100);
+                    if (!columnHeads[key] || drop.y > columnHeads[key].y) {
+                        columnHeads[key] = drop;
                     }
                 }
 
-                // Оновлення позицій та кольорів
-                for (let i = 0; i < totalDrops; i++) {
-                    let y = positions[i * 3 + 1] - speeds[i];
-                    if (y < bottom) {
-                        y = top + Math.random() * 1.5;
-                        speeds[i] = 0.015 + Math.random() * 0.045;
+                for (const drop of rainDrops) {
+                    // Рух вниз
+                    drop.y -= drop.speed * 0.8;
+                    if (drop.y < -halfH - 1) {
+                        drop.y = halfH + Math.random() * 2;
+                        drop.speed = 0.02 + Math.random() * 0.04;
+                        drop.x = -WIDTH / 2 + Math.random() * WIDTH;
+                        // Оновимо символ
+                        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+{}[]';
+                        drop.char = chars[Math.floor(Math.random() * chars.length)];
+                        // Оновимо текстуру
+                        const canvas = drop.sprite.material.map.image;
+                        const ctx = canvas.getContext('2d');
+                        ctx.clearRect(0, 0, 64, 64);
+                        ctx.fillStyle = '#eeffee';
+                        ctx.font = 'bold 42px "Share Tech Mono", monospace';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(drop.char, 32, 32);
+                        drop.sprite.material.map.needsUpdate = true;
                     }
-                    positions[i * 3 + 1] = y;
 
-                    const col = Math.floor((columnX[i] + RAIN_WIDTH/2) / (RAIN_WIDTH / columns));
-                    const isHead = (col >= 0 && col < columns && columnMaxIdx[col] === i);
+                    drop.sprite.position.y = drop.y;
 
-                    if (isHead) {
-                        colors[i * 3] = 0.9;
-                        colors[i * 3 + 1] = 1.0;
-                        colors[i * 3 + 2] = 0.9;
+                    // Колір: якщо це голова колонки — білий, інакше зелений з затуханням
+                    const key = Math.round(drop.x * 100);
+                    const head = columnHeads[key];
+                    if (head === drop) {
+                        drop.sprite.material.color.setHex(0xeeffee);
+                        drop.sprite.material.opacity = 1.0;
                     } else {
-                        const distToHead = (col >= 0 && col < columns) ? Math.abs(y - columnMaxY[col]) / 4 : 2;
-                        const intensity = Math.max(0.15, 1 - distToHead * 0.6);
-                        colors[i * 3] = 0.1 * intensity;
-                        colors[i * 3 + 1] = 0.85 * intensity;
-                        colors[i * 3 + 2] = 0.2 * intensity;
+                        // Затухання в залежності від відстані до голови
+                        const dist = Math.abs(drop.y - head.y) / 3;
+                        const alpha = Math.max(0.05, 1 - dist * 0.5);
+                        drop.sprite.material.opacity = alpha * 0.9;
+                        // Колір від яскраво-зеленого до темно-зеленого
+                        const green = 0.3 + 0.7 * (1 - dist * 0.4);
+                        drop.sprite.material.color.setHSL(0.33, 0.9, green * 0.5);
                     }
-                }
-
-                rainSystem.points.geometry.attributes.position.needsUpdate = true;
-                rainSystem.points.geometry.attributes.color.needsUpdate = true;
-
-                // Іноді змінюємо символ у текстурі дощу
-                rainSymbolTimer += deltaTime;
-                if (rainSymbolTimer > 0.5) {
-                    rainSymbolTimer = 0;
-                    drawRandomSymbol();
                 }
             }
 
-            // ---------- 3D-ТЕКСТ ----------
-            let logoMesh;
+            // --- 2. 3D-текст (REANIMATOR) через TextGeometry ---
+            let logoMesh = null;
+
             function createLogoText(font) {
                 const textGeo = new THREE.TextGeometry('REANIMATOR', {
                     font: font,
@@ -548,10 +550,10 @@
 
                 const material = new THREE.MeshStandardMaterial({
                     color: 0x21d63b,
-                    emissive: 0x114411,
-                    emissiveIntensity: 0.5,
-                    metalness: 0.25,
-                    roughness: 0.4,
+                    emissive: 0x21d63b,
+                    emissiveIntensity: 0.6,
+                    metalness: 0.2,
+                    roughness: 0.3,
                     transparent: true,
                     opacity: 0.95
                 });
@@ -562,246 +564,251 @@
                 webglScene.add(mesh);
                 logoMesh = mesh;
 
-                const glowLight = new THREE.PointLight(0x21d63b, 0.5, 7);
-                glowLight.position.copy(mesh.position).add(new THREE.Vector3(0, 0.5, 0));
-                webglScene.add(glowLight);
+                // Додамо невелике світіння навколо (PointLight вже є)
+                // Додамо ще один маленький промінь
+                const glow = new THREE.PointLight(0x21d63b, 0.3, 6);
+                glow.position.copy(mesh.position);
+                glow.position.y += 0.3;
+                webglScene.add(glow);
+
+                return mesh;
             }
 
-            // ---------- ЧАСТИНКИ НАВКОЛО ЛОГОТИПА ----------
-            function createParticleRing() {
-                const count = 200;
-                const positions = new Float32Array(count * 3);
-                const colors = new Float32Array(count * 3);
-                for (let i = 0; i < count; i++) {
-                    const angle = (i / count) * Math.PI * 2;
-                    const radius = 2.5 + Math.random() * 0.8;
-                    const y = 1.2 + Math.sin(i * 5) * 0.5;
-                    positions[i * 3] = Math.cos(angle) * radius;
-                    positions[i * 3 + 1] = y;
-                    positions[i * 3 + 2] = -3.5 + Math.sin(angle * 2) * 1.5;
-                    colors[i * 3] = 0.1 + Math.random() * 0.4;
-                    colors[i * 3 + 1] = 0.7 + Math.random() * 0.3;
-                    colors[i * 3 + 2] = 0.2 + Math.random() * 0.3;
-                }
-                const geo = new THREE.BufferGeometry();
-                geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-                geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-                const mat = new THREE.PointsMaterial({
-                    size: 0.06,
-                    blending: THREE.AdditiveBlending,
-                    depthWrite: false,
-                    vertexColors: true,
-                    transparent: true,
-                    opacity: 0.8
-                });
-                const points = new THREE.Points(geo, mat);
-                webglScene.add(points);
-                return points;
-            }
-            const particleRing = createParticleRing();
-
-            // Декоративна сітка та периметр
-            const gridHelper = new THREE.GridHelper(20, 20, 0x21d63b, 0x11441a);
-            gridHelper.position.y = -0.5;
-            webglScene.add(gridHelper);
-
-            const ringGeometry = new THREE.TorusGeometry(8, 0.02, 16, 100);
-            const ringMaterial = new THREE.MeshStandardMaterial({
-                color: 0x21d63b,
-                emissive: 0x21d63b,
-                emissiveIntensity: 0.8,
-                roughness: 0.3,
-                metalness: 0.1
-            });
-            const ring = new THREE.Mesh(ringGeometry, ringMaterial);
-            ring.position.set(0, -0.1, -5);
-            ring.rotation.x = Math.PI / 2;
-            webglScene.add(ring);
-
-            // ---------- CSS3D ПАНЕЛІ ----------
+            // --- 3. CSS3D панелі з контентом ---
             function createPanelHTML(index) {
                 const div = document.createElement('div');
                 div.className = 'panel-3d css3d-object';
+
                 if (index === 0) {
+                    // Головна
                     div.innerHTML = `
-                        <h2>⚡ REANIMATOR</h2>
-                        <p style="font-size:0.95rem; color:#aaa;">Комп'ютерний сервіс в Одесі</p>
-                        <p style="margin-top:12px;"><span class="highlight">📞</span> <span class="phone">+380 66 7000 533</span><br>
-                        <span class="highlight">📞</span> <span class="phone">+380 63 7000 533</span></p>
-                        <p><span class="highlight">⏰</span> Прийом: 10:00 – 20:00</p>
-                        <p><span class="highlight">👨‍🔧</span> Майстер: Олександр Олександрович</p>
-                        <p style="margin-top:8px; font-size:0.9rem; color:#888;">Гарантія до 12 місяців</p>`;
+                <h2>⚡ REANIMATOR</h2>
+                <p style="font-size:0.95rem; color:#aaa;">Комп'ютерний сервіс в Одесі</p>
+                <p style="margin-top:12px;"><span class="highlight">📞</span> <span class="phone">+380 66 7000 533</span><br>
+                <span class="highlight">📞</span> <span class="phone">+380 63 7000 533</span></p>
+                <p><span class="highlight">⏰</span> Прийом: 10:00 – 20:00</p>
+                <p><span class="highlight">👨‍🔧</span> Майстер: Олександр Олександрович</p>
+                <p style="margin-top:8px; font-size:0.9rem; color:#888;">Гарантія до 12 місяців</p>
+              `;
                 } else if (index === 1) {
+                    // Послуги
                     div.innerHTML = `
-                        <h2>🛠 ПОСЛУГИ</h2>
-                        <ul>
-                            <li><span>Чистка ноутбука / ПК</span> <span class="price">1000 грн</span></li>
-                            <li><span>Встановлення Windows / Linux</span> <span class="price">1000 грн</span></li>
-                            <li><span>Smart TV (налаштування)</span> <span class="price">600 грн</span></li>
-                            <li><span>Видалення вірусів</span> <span class="price">500 грн</span></li>
-                            <li><span>Апгрейд (від)</span> <span class="price">від 300 грн</span></li>
-                            <li><span>Виїзд майстра</span> <span class="price">+200 грн</span></li>
-                        </ul>
-                        <p style="margin-top:10px; font-size:0.9rem; color:#888;">Гарантія на роботи до 12 місяців</p>`;
-                } else {
+                <h2>🛠 ПОСЛУГИ</h2>
+                <ul>
+                  <li><span>Чистка ноутбука / ПК</span> <span class="price">1000 грн</span></li>
+                  <li><span>Встановлення Windows / Linux</span> <span class="price">1000 грн</span></li>
+                  <li><span>Smart TV (налаштування)</span> <span class="price">600 грн</span></li>
+                  <li><span>Видалення вірусів</span> <span class="price">500 грн</span></li>
+                  <li><span>Апгрейд (від)</span> <span class="price">від 300 грн</span></li>
+                  <li><span>Виїзд майстра</span> <span class="price">+200 грн</span></li>
+                </ul>
+                <p style="margin-top:10px; font-size:0.9rem; color:#888;">Гарантія на роботи до 12 місяців</p>
+              `;
+                } else if (index === 2) {
+                    // Гарантія
                     div.innerHTML = `
-                        <h2>🛡 ГАРАНТІЯ</h2>
-                        <p style="font-size:1.1rem;">Ми надаємо <span class="highlight">гарантію до 12 місяців</span> на всі види робіт!</p>
-                        <ul style="margin-top:12px;">
-                            <li><span>🔧 Чистка та профілактика</span> <span class="price">6 міс.</span></li>
-                            <li><span>💻 Встановлення ОС</span> <span class="price">6 міс.</span></li>
-                            <li><span>🛡 Видалення вірусів</span> <span class="price">3 міс.</span></li>
-                            <li><span>⚡ Апгрейд комплектуючих</span> <span class="price">12 міс.</span></li>
-                        </ul>
-                        <p style="margin-top:12px; color:#888;">Деталі уточнюйте у майстра.</p>`;
+                <h2>🛡 ГАРАНТІЯ</h2>
+                <p style="font-size:1.1rem;">Ми надаємо <span class="highlight">гарантію до 12 місяців</span> на всі види робіт!</p>
+                <ul style="margin-top:12px;">
+                  <li><span>🔧 Чистка та профілактика</span> <span class="price">6 міс.</span></li>
+                  <li><span>💻 Встановлення ОС</span> <span class="price">6 міс.</span></li>
+                  <li><span>🛡 Видалення вірусів</span> <span class="price">3 міс.</span></li>
+                  <li><span>⚡ Апгрейд комплектуючих</span> <span class="price">12 міс.</span></li>
+                </ul>
+                <p style="margin-top:12px; color:#888;">Деталі уточнюйте у майстра.</p>
+              `;
                 }
                 return div;
             }
 
             const panelObjects = [];
+
             function initPanels() {
                 for (let i = 0; i < 3; i++) {
                     const div = createPanelHTML(i);
                     const obj = new THREE.CSS3DObject(div);
                     const pos = PANEL_POSITIONS[i];
                     obj.position.set(pos.x, 0.2, pos.z);
+                    // Невеликий поворот для ефекту
                     if (i === 1) obj.rotation.y = -0.12;
                     else if (i === 2) obj.rotation.y = 0.12;
                     cssScene.add(obj);
                     panelObjects.push(obj);
                 }
             }
-            initPanels();
 
-            // ---------- ЗАВАНТАЖЕННЯ ШРИФТУ ----------
+            // --- 4. Завантаження шрифту та ініціалізація ---
+            let fontLoaded = false;
             const fontLoader = new THREE.FontLoader();
+
             fontLoader.load(
                 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/fonts/helvetiker_regular.typeface.json',
-                createLogoText,
+                function(font) {
+                    createLogoText(font);
+                    fontLoaded = true;
+                },
                 undefined,
-                (err) => console.warn('Шрифт не завантажено:', err)
+                function(err) {
+                    console.warn('Не вдалося завантажити шрифт, 3D-текст буде пропущено', err);
+                }
             );
 
-            // ---------- НАВІГАЦІЯ (без конфлікту lookAt/rotation) ----------
+            // Ініціалізація панелей
+            initPanels();
+
+            // Додамо декоративні елементи до WebGL-сцени (підлога, сітка)
+            const gridHelper = new THREE.GridHelper(20, 20, 0x21d63b, 0x11441a);
+            gridHelper.position.y = -0.5;
+            webglScene.add(gridHelper);
+
+            // Легкий туман
+            webglScene.fog = new THREE.FogExp2(0x0a0a0a, 0.035);
+
+            // --- 5. Навігація (GSAP) ---
+            let isAnimating = false;
+
             window.goToPanel = function(index) {
                 if (isAnimating || index === currentPanel) return;
                 isAnimating = true;
+
                 const targetPos = CAMERA_BASE[index];
                 const targetLook = { x: PANEL_POSITIONS[index].x, y: 0, z: PANEL_POSITIONS[index].z };
 
-                // Напрямок крену: для правої панелі (index 1) — додатний крен, для лівої (index 2) — від'ємний
-                const maxRoll = index === 1 ? 0.2 : (index === 2 ? -0.2 : 0);
-                const rollObj = { value: 0 }; // поточний крен
+                // Поточні параметри камери
+                const startPos = {
+                    x: camera.position.x,
+                    y: camera.position.y,
+                    z: camera.position.z
+                };
+                const startRotZ = camera.rotation.z || 0;
 
+                // Анімація позиції
                 const tl = gsap.timeline({
-                    onComplete: () => {
+                    onComplete: function() {
                         isAnimating = false;
                         currentPanel = index;
-                        // гарантовано повертаємо up до стандартного
-                        camera.up.set(0, 1, 0);
+                        // Скидаємо крен
+                        gsap.to(camera.rotation, {
+                            z: 0,
+                            duration: 0.4,
+                            ease: 'power2.out',
+                            overwrite: 'auto'
+                        });
                     }
                 });
 
-                // Анімація крену (змінюємо rollObj.value)
-                tl.to(rollObj, { value: maxRoll, duration: 0.4, ease: 'power2.out' }, 0);
-                tl.to(rollObj, { value: -maxRoll * 0.5, duration: 0.5, ease: 'power2.inOut' }, 0.5);
-                tl.to(rollObj, { value: 0, duration: 0.4, ease: 'power2.out' }, 1.0);
-
-                // Анімація позиції камери (використовує поточний roll)
+                // Рух камери
                 tl.to(camera.position, {
                     x: targetPos.x,
                     y: targetPos.y,
                     z: targetPos.z,
                     duration: 1.4,
                     ease: 'power2.inOut',
-                    onUpdate: () => {
-                        // Застосовуємо крен через camera.up
-                        camera.up.set(Math.sin(rollObj.value), Math.cos(rollObj.value), 0).normalize();
+                    onUpdate: function() {
                         camera.lookAt(targetLook.x, targetLook.y, targetLook.z);
                     }
                 }, 0);
 
+                // Крен (rotation.z) – легке обертання
+                tl.to(camera.rotation, {
+                    z: 0.12,
+                    duration: 0.4,
+                    ease: 'power2.out',
+                    overwrite: 'auto'
+                }, 0.0);
+                tl.to(camera.rotation, {
+                    z: -0.08,
+                    duration: 0.5,
+                    ease: 'power2.inOut',
+                    overwrite: 'auto'
+                }, 0.5);
+                tl.to(camera.rotation, {
+                    z: 0.05,
+                    duration: 0.3,
+                    ease: 'power2.out',
+                    overwrite: 'auto'
+                }, 1.0);
+                // Завершення крену буде в onComplete
+
+                // Оновлюємо цілі для паралаксу
                 targetCameraPos = { ...targetPos };
                 targetLookAt = { ...targetLook };
             };
 
-            // ---------- ГІРОСКОП (iOS permission) ----------
-            const gyroBtn = document.getElementById('gyro-permission');
-            let gyroEnabled = false;
+            // --- 6. Паралакс від гіроскопа (мобільні) ---
+            if (window.DeviceOrientationEvent) {
+                window.addEventListener('deviceorientation', function(event) {
+                    const beta = event.beta || 0; // -180..180
+                    const gamma = event.gamma || 0; // -90..90
 
-            function enableGyro() {
-                if (typeof DeviceOrientationEvent !== 'undefined') {
-                    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-                        DeviceOrientationEvent.requestPermission()
-                            .then(state => {
-                                if (state === 'granted') {
-                                    gyroEnabled = true;
-                                    gyroBtn.style.display = 'none';
-                                }
-                            })
-                            .catch(() => {});
-                    } else {
-                        gyroEnabled = true;
-                        gyroBtn.style.display = 'none';
-                    }
-                }
+                    // Нормалізуємо: beta (нахил вперед-назад), gamma (нахил вліво-вправо)
+                    // Обмежуємо значення
+                    const b = Math.max(-30, Math.min(30, beta)) / 30;
+                    const g = Math.max(-30, Math.min(30, gamma)) / 30;
+
+                    gyroOffsetX = g * GYRO_MAX;
+                    gyroOffsetY = -b * GYRO_MAX * 0.6; // трохи менше по вертикалі
+                }, { passive: true });
             }
 
-            if (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-                gyroBtn.style.display = 'block';
-                gyroBtn.addEventListener('click', enableGyro);
-            }
-
-            window.addEventListener('deviceorientation', (event) => {
-                if (!gyroEnabled) return;
-                const beta = event.beta || 0;
-                const gamma = event.gamma || 0;
-                const b = Math.max(-30, Math.min(30, beta)) / 30;
-                const g = Math.max(-30, Math.min(30, gamma)) / 30;
-                gyroOffsetX = g * GYRO_MAX;
-                gyroOffsetY = -b * GYRO_MAX * 0.6;
-            }, { passive: true });
-
-            // ---------- ГОЛОВНИЙ ЦИКЛ ----------
-            let lastTime = performance.now();
+            // --- 7. Анімаційний цикл ---
             function animate() {
                 requestAnimationFrame(animate);
 
-                const now = performance.now();
-                const delta = (now - lastTime) / 1000; // секунд
-                lastTime = now;
+                // Оновлення дождю
+                updateRain();
 
-                updateRain(delta);
+                // Паралакс: зміщуємо камеру відносно цільової позиції
+                const baseX = targetCameraPos.x;
+                const baseY = targetCameraPos.y;
+                const baseZ = targetCameraPos.z;
 
-                particleRing.rotation.y += 0.002;
-                ring.rotation.z += 0.001;
+                // Застосовуємо зміщення від гіроскопа, якщо не анімуємо
+                // Під час анімації паралакс теж працює, але згладжено
+                let offsetX = 0,
+                    offsetY = 0;
+                if (!isAnimating) {
+                    offsetX = gyroOffsetX;
+                    offsetY = gyroOffsetY;
+                } else {
+                    // Під час анімації зменшуємо вплив паралаксу
+                    offsetX = gyroOffsetX * 0.2;
+                    offsetY = gyroOffsetY * 0.2;
+                }
 
-                // Паралакс від гіроскопа
-                const offX = isAnimating ? gyroOffsetX * 0.2 : gyroOffsetX;
-                const offY = isAnimating ? gyroOffsetY * 0.2 : gyroOffsetY;
-                camera.position.set(
-                    targetCameraPos.x + offX,
-                    targetCameraPos.y + offY,
-                    targetCameraPos.z
-                );
+                camera.position.x = baseX + offsetX;
+                camera.position.y = baseY + offsetY;
+                camera.position.z = baseZ;
+
+                // Завжди дивимося на ціль
                 camera.lookAt(targetLookAt.x, targetLookAt.y, targetLookAt.z);
 
-                composer.render();
+                // Рендеринг
+                webglRenderer.render(webglScene, camera);
                 cssRenderer.render(cssScene, camera);
             }
 
-            window.addEventListener('resize', () => {
+            // --- 8. Resize ---
+            window.addEventListener('resize', function() {
                 const w = window.innerWidth;
                 const h = window.innerHeight;
                 camera.aspect = w / h;
                 camera.updateProjectionMatrix();
                 webglRenderer.setSize(w, h);
                 cssRenderer.setSize(w, h);
-                composer.setSize(w, h);
             });
 
-            lastTime = performance.now();
+            // --- 9. Запуск ---
             animate();
+
+            // Невелика затримка для першої анімації
+            setTimeout(() => {
+                // Початковий погляд на головну панель
+                camera.lookAt(PANEL_POSITIONS[0].x, 0, PANEL_POSITIONS[0].z);
+                targetLookAt = { x: PANEL_POSITIONS[0].x, y: 0, z: PANEL_POSITIONS[0].z };
+                targetCameraPos = { ...CAMERA_BASE[0] };
+            }, 100);
+
         })();
     </script>
 </body>
