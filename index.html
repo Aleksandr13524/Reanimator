@@ -23,6 +23,7 @@
             color: #21d63b;
             user-select: none;
             -webkit-user-select: none;
+            /* Не забороняємо жести глобально – дозволяємо скрол у панелях */
         }
 
         #webgl-container {
@@ -180,7 +181,7 @@
             transition: box-shadow 0.3s;
             overflow-y: auto;
             max-height: 80vh;
-            touch-action: pan-y;
+            touch-action: pan-y;   /* дозволяє скрол на мобільних */
             -webkit-overflow-scrolling: touch;
         }
 
@@ -274,7 +275,7 @@
             border-radius: 20px;
             font-family: 'Share Tech Mono', monospace;
             cursor: pointer;
-            display: none;
+            display: none; /* покажемо лише на iOS */
         }
     </style>
 </head>
@@ -283,7 +284,7 @@
     <div id="hud">
         <div class="hud-top">
             <div class="hud-logo">⚡ REANIMATOR</div>
-            <div class="hud-status">ОДЕСА NODE</div>
+            <div class="hud-status">ОДЕССА NODE</div>
         </div>
         <div style="flex:1;"></div>
         <div class="hud-ticker">
@@ -298,12 +299,14 @@
         </div>
     </div>
 
+    <!-- Контейнери рендерерів -->
     <div id="webgl-container"></div>
     <div id="css-container"></div>
 
+    <!-- Кнопка для активації гіроскопа (iOS) -->
     <button id="gyro-permission">📱 Дозволити рух</button>
 
-    <!-- Бібліотеки -->
+    <!-- Бібліотеки Three.js r128 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FontLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/TextGeometry.js"></script>
@@ -317,7 +320,7 @@
         (function() {
             'use strict';
 
-            // ---------- ГЛОБАЛЬНІ КОНСТАНТИ ----------
+            // ========== Глобальні константи ==========
             const RAIN_WIDTH = 18;
             const RAIN_HEIGHT = 12;
             const PANEL_POSITIONS = [
@@ -341,7 +344,7 @@
             let gyroOffsetX = 0, gyroOffsetY = 0;
             const GYRO_MAX = 1.2;
 
-            // ---------- СЦЕНА ТА РЕНДЕРЕРИ ----------
+            // ========== Сцена та рендерери ==========
             const webglContainer = document.getElementById('webgl-container');
             const cssContainer = document.getElementById('css-container');
 
@@ -372,19 +375,21 @@
             cssRenderer.domElement.style.pointerEvents = 'none';
             cssContainer.appendChild(cssRenderer.domElement);
 
-            // Постобробка (Bloom)
+            // ========== Постобробка (Bloom) ==========
             const renderScene = new RenderPass(webglScene, camera);
             const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
             bloomPass.threshold = 0.2;
             bloomPass.strength = 1.2;
             bloomPass.radius = 0.5;
+
             const composer = new EffectComposer(webglRenderer);
             composer.addPass(renderScene);
             composer.addPass(bloomPass);
 
-            // ---------- ОСВІТЛЕННЯ ----------
+            // ========== Освітлення ==========
             const ambient = new THREE.AmbientLight(0x404060, 0.5);
             webglScene.add(ambient);
+
             const dirLight = new THREE.DirectionalLight(0x88ffaa, 0.7);
             dirLight.position.set(2, 5, 4);
             dirLight.castShadow = true;
@@ -397,37 +402,32 @@
             dirLight.shadow.camera.top = 10;
             dirLight.shadow.camera.bottom = -10;
             webglScene.add(dirLight);
+
             const backLight = new THREE.DirectionalLight(0x21d63b, 0.4);
             backLight.position.set(-2, 1, -6);
             webglScene.add(backLight);
+
             const pointLight = new THREE.PointLight(0x21d63b, 0.6, 15);
             pointLight.position.set(0, 3, -4);
             webglScene.add(pointLight);
 
-            // ---------- МАТРИЧНИЙ ДОЩ (BufferGeometry + Points) ----------
-            const symbols = ['ｱ','ｲ','ｳ','ｴ','ｵ','0','1','ﾘ','ﾇ','ﾏ','+','-','*','/'];
-            const canvas = document.createElement('canvas');
-            canvas.width = 64;
-            canvas.height = 64;
-            const ctx = canvas.getContext('2d');
-            let rainTexture = new THREE.CanvasTexture(canvas);
-
-            function drawRandomSymbol() {
-                ctx.clearRect(0, 0, 64, 64);
-                const s = symbols[Math.floor(Math.random() * symbols.length)];
-                ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 48px "Share Tech Mono", monospace';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(s, 32, 32);
-                rainTexture.needsUpdate = true;
-            }
-            drawRandomSymbol();
-
+            // ========== Матричний дощ (BufferGeometry + Points) ==========
             function createMatrixRain() {
                 const columns = 80;
                 const dropsPerColumn = 25;
                 const totalDrops = columns * dropsPerColumn;
+                
+                // Створюємо спільну текстуру з символом (японський символ кани)
+                const canvas = document.createElement('canvas');
+                canvas.width = 64;
+                canvas.height = 64;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 48px "Share Tech Mono", monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('ｱ', 32, 32);
+                const texture = new THREE.CanvasTexture(canvas);
 
                 const positions = new Float32Array(totalDrops * 3);
                 const colors = new Float32Array(totalDrops * 3);
@@ -445,6 +445,7 @@
                         positions[idx * 3 + 2] = -4 + Math.random() * 3 - 1.5;
                         columnX[idx] = baseX;
                         speeds[idx] = 0.015 + Math.random() * 0.045;
+                        // колір початковий
                         colors[idx * 3] = 0.2;
                         colors[idx * 3 + 1] = 0.9;
                         colors[idx * 3 + 2] = 0.3;
@@ -457,7 +458,7 @@
                 geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
                 const material = new THREE.PointsMaterial({
-                    map: rainTexture,
+                    map: texture,
                     size: 0.22,
                     blending: THREE.AdditiveBlending,
                     depthWrite: false,
@@ -468,21 +469,22 @@
 
                 const points = new THREE.Points(geometry, material);
                 webglScene.add(points);
+
                 return { points, speeds, columnX, positions, colors, columns, dropsPerColumn, totalDrops };
             }
 
             const rainSystem = createMatrixRain();
-            let rainSymbolTimer = 0;
 
-            function updateRain(deltaTime) {
+            function updateRain() {
                 const { positions, speeds, columnX, colors, columns, dropsPerColumn, totalDrops } = rainSystem;
                 const halfH = RAIN_HEIGHT / 2;
                 const bottom = -halfH - 0.5;
                 const top = halfH + 0.5;
 
-                // Знаходимо "голову" кожної колонки
+                // Тимчасове сховище для найвищої краплі в колонці (для ефекту голови)
                 const columnMaxIdx = new Array(columns).fill(-1);
                 const columnMaxY = new Array(columns).fill(-Infinity);
+
                 for (let i = 0; i < totalDrops; i++) {
                     const y = positions[i * 3 + 1];
                     const col = Math.floor((columnX[i] + RAIN_WIDTH/2) / (RAIN_WIDTH / columns));
@@ -492,12 +494,14 @@
                     }
                 }
 
-                // Оновлення позицій та кольорів
+                // Оновлюємо позиції та кольори
                 for (let i = 0; i < totalDrops; i++) {
                     let y = positions[i * 3 + 1] - speeds[i];
                     if (y < bottom) {
                         y = top + Math.random() * 1.5;
                         speeds[i] = 0.015 + Math.random() * 0.045;
+                        // оновлюємо X (можна лишити)
+                        // columnX вже задано
                     }
                     positions[i * 3 + 1] = y;
 
@@ -505,10 +509,12 @@
                     const isHead = (col >= 0 && col < columns && columnMaxIdx[col] === i);
 
                     if (isHead) {
+                        // голова – яскраво-білий із зеленим відтінком
                         colors[i * 3] = 0.9;
                         colors[i * 3 + 1] = 1.0;
                         colors[i * 3 + 2] = 0.9;
                     } else {
+                        // звичайна крапля – затемнений зелений
                         const distToHead = (col >= 0 && col < columns) ? Math.abs(y - columnMaxY[col]) / 4 : 2;
                         const intensity = Math.max(0.15, 1 - distToHead * 0.6);
                         colors[i * 3] = 0.1 * intensity;
@@ -519,16 +525,9 @@
 
                 rainSystem.points.geometry.attributes.position.needsUpdate = true;
                 rainSystem.points.geometry.attributes.color.needsUpdate = true;
-
-                // Іноді змінюємо символ у текстурі дощу
-                rainSymbolTimer += deltaTime;
-                if (rainSymbolTimer > 0.5) {
-                    rainSymbolTimer = 0;
-                    drawRandomSymbol();
-                }
             }
 
-            // ---------- 3D-ТЕКСТ ----------
+            // ========== 3D-текст ==========
             let logoMesh;
             function createLogoText(font) {
                 const textGeo = new THREE.TextGeometry('REANIMATOR', {
@@ -562,12 +561,13 @@
                 webglScene.add(mesh);
                 logoMesh = mesh;
 
+                // Додаткове світло навколо тексту
                 const glowLight = new THREE.PointLight(0x21d63b, 0.5, 7);
                 glowLight.position.copy(mesh.position).add(new THREE.Vector3(0, 0.5, 0));
                 webglScene.add(glowLight);
             }
 
-            // ---------- ЧАСТИНКИ НАВКОЛО ЛОГОТИПА ----------
+            // ========== Частинки навколо логотипа ==========
             function createParticleRing() {
                 const count = 200;
                 const positions = new Float32Array(count * 3);
@@ -600,11 +600,12 @@
             }
             const particleRing = createParticleRing();
 
-            // Декоративна сітка та периметр
+            // ========== Декоративна сітка та підлога ==========
             const gridHelper = new THREE.GridHelper(20, 20, 0x21d63b, 0x11441a);
             gridHelper.position.y = -0.5;
             webglScene.add(gridHelper);
 
+            // Неонова лінія по периметру
             const ringGeometry = new THREE.TorusGeometry(8, 0.02, 16, 100);
             const ringMaterial = new THREE.MeshStandardMaterial({
                 color: 0x21d63b,
@@ -618,7 +619,7 @@
             ring.rotation.x = Math.PI / 2;
             webglScene.add(ring);
 
-            // ---------- CSS3D ПАНЕЛІ ----------
+            // ========== CSS3D панелі ==========
             function createPanelHTML(index) {
                 const div = document.createElement('div');
                 div.className = 'panel-3d css3d-object';
@@ -673,7 +674,7 @@
             }
             initPanels();
 
-            // ---------- ЗАВАНТАЖЕННЯ ШРИФТУ ----------
+            // ========== Завантаження шрифту ==========
             const fontLoader = new THREE.FontLoader();
             fontLoader.load(
                 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/fonts/helvetiker_regular.typeface.json',
@@ -682,50 +683,39 @@
                 (err) => console.warn('Шрифт не завантажено:', err)
             );
 
-            // ---------- НАВІГАЦІЯ (без конфлікту lookAt/rotation) ----------
+            // ========== Навігація ==========
             window.goToPanel = function(index) {
                 if (isAnimating || index === currentPanel) return;
                 isAnimating = true;
                 const targetPos = CAMERA_BASE[index];
                 const targetLook = { x: PANEL_POSITIONS[index].x, y: 0, z: PANEL_POSITIONS[index].z };
 
-                // Напрямок крену: для правої панелі (index 1) — додатний крен, для лівої (index 2) — від'ємний
-                const maxRoll = index === 1 ? 0.2 : (index === 2 ? -0.2 : 0);
-                const rollObj = { value: 0 }; // поточний крен
-
                 const tl = gsap.timeline({
                     onComplete: () => {
                         isAnimating = false;
                         currentPanel = index;
-                        // гарантовано повертаємо up до стандартного
-                        camera.up.set(0, 1, 0);
+                        gsap.to(camera.rotation, { z: 0, duration: 0.4, ease: 'power2.out', overwrite: 'auto' });
                     }
                 });
 
-                // Анімація крену (змінюємо rollObj.value)
-                tl.to(rollObj, { value: maxRoll, duration: 0.4, ease: 'power2.out' }, 0);
-                tl.to(rollObj, { value: -maxRoll * 0.5, duration: 0.5, ease: 'power2.inOut' }, 0.5);
-                tl.to(rollObj, { value: 0, duration: 0.4, ease: 'power2.out' }, 1.0);
-
-                // Анімація позиції камери (використовує поточний roll)
                 tl.to(camera.position, {
                     x: targetPos.x,
                     y: targetPos.y,
                     z: targetPos.z,
                     duration: 1.4,
                     ease: 'power2.inOut',
-                    onUpdate: () => {
-                        // Застосовуємо крен через camera.up
-                        camera.up.set(Math.sin(rollObj.value), Math.cos(rollObj.value), 0).normalize();
-                        camera.lookAt(targetLook.x, targetLook.y, targetLook.z);
-                    }
+                    onUpdate: () => camera.lookAt(targetLook.x, targetLook.y, targetLook.z)
                 }, 0);
+
+                tl.to(camera.rotation, { z: 0.12, duration: 0.4, ease: 'power2.out', overwrite: 'auto' }, 0.0);
+                tl.to(camera.rotation, { z: -0.08, duration: 0.5, ease: 'power2.inOut', overwrite: 'auto' }, 0.5);
+                tl.to(camera.rotation, { z: 0.05, duration: 0.3, ease: 'power2.out', overwrite: 'auto' }, 1.0);
 
                 targetCameraPos = { ...targetPos };
                 targetLookAt = { ...targetLook };
             };
 
-            // ---------- ГІРОСКОП (iOS permission) ----------
+            // ========== Гіроскоп ==========
             const gyroBtn = document.getElementById('gyro-permission');
             let gyroEnabled = false;
 
@@ -741,12 +731,14 @@
                             })
                             .catch(() => {});
                     } else {
+                        // iOS < 13 або Android
                         gyroEnabled = true;
                         gyroBtn.style.display = 'none';
                     }
                 }
             }
 
+            // Показуємо кнопку тільки на мобільних пристроях
             if (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
                 gyroBtn.style.display = 'block';
                 gyroBtn.addEventListener('click', enableGyro);
@@ -762,34 +754,33 @@
                 gyroOffsetY = -b * GYRO_MAX * 0.6;
             }, { passive: true });
 
-            // ---------- ГОЛОВНИЙ ЦИКЛ ----------
-            let lastTime = performance.now();
+            // ========== Анімація ==========
             function animate() {
                 requestAnimationFrame(animate);
 
-                const now = performance.now();
-                const delta = (now - lastTime) / 1000; // секунд
-                lastTime = now;
+                updateRain();
 
-                updateRain(delta);
-
+                // Обертання кільця частинок
                 particleRing.rotation.y += 0.002;
                 ring.rotation.z += 0.001;
 
-                // Паралакс від гіроскопа
+                // Паралакс камери
+                const baseX = targetCameraPos.x;
+                const baseY = targetCameraPos.y;
+                const baseZ = targetCameraPos.z;
                 const offX = isAnimating ? gyroOffsetX * 0.2 : gyroOffsetX;
                 const offY = isAnimating ? gyroOffsetY * 0.2 : gyroOffsetY;
-                camera.position.set(
-                    targetCameraPos.x + offX,
-                    targetCameraPos.y + offY,
-                    targetCameraPos.z
-                );
+                camera.position.set(baseX + offX, baseY + offY, baseZ);
                 camera.lookAt(targetLookAt.x, targetLookAt.y, targetLookAt.z);
 
+                // Рендеринг WebGL через composer (з bloom)
                 composer.render();
+
+                // CSS рендеринг окремо
                 cssRenderer.render(cssScene, camera);
             }
 
+            // ========== Resize ==========
             window.addEventListener('resize', () => {
                 const w = window.innerWidth;
                 const h = window.innerHeight;
@@ -800,8 +791,10 @@
                 composer.setSize(w, h);
             });
 
-            lastTime = performance.now();
+            // Старт
             animate();
+            targetLookAt = { x: PANEL_POSITIONS[0].x, y: 0, z: PANEL_POSITIONS[0].z };
+            targetCameraPos = { ...CAMERA_BASE[0] };
         })();
     </script>
 </body>
