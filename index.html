@@ -2,296 +2,119 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
     <title>REANIMATOR — комп'ютерний сервіс в Одесі</title>
-
-    <!-- Шрифти Google -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet" />
 
     <style>
-        /* --- Глобальні стилі --- */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background: #0a0a0a;
-            overflow: hidden;
-            font-family: 'Share Tech Mono', monospace;
-            color: #21d63b;
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: none;
+            background: #0a0a0a; overflow: hidden;
+            font-family: 'Share Tech Mono', monospace; color: #21d63b;
+            user-select: none; -webkit-user-select: none;
         }
-
-        /* Контейнери для рендерерів */
-        #webgl-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 0;
-        }
-        #css-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 1;
-            pointer-events: none;
-            /* CSS3D-об'єкти отримають pointer-events: auto через стилі */;
-        }
-        #css-container .css3d-object {
-            pointer-events: auto;
-        }
-
-        /* --- HUD (поверх всього) --- */
+        #webgl-container { position: fixed; top:0; left:0; width:100vw; height:100vh; z-index:0; }
+        #css-container { position: fixed; top:0; left:0; width:100vw; height:100vh; z-index:1; pointer-events: none; }
         #hud {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 10;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+            position: fixed; top:0; left:0; width:100%; height:100%; z-index:10;
+            pointer-events: none; display:flex; flex-direction:column; justify-content:space-between;
             padding: 20px 30px;
         }
-
-        /* Верхній рядок */
-        .hud-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-        }
+        .hud-top { display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px; }
         .hud-logo {
-            font-family: 'Rajdhani', sans-serif;
-            font-weight: 700;
-            font-size: 2.2rem;
-            letter-spacing: 6px;
-            color: #21d63b;
-            text-shadow: 0 0 15px #21d63b88, 0 0 40px #21d63b44;
-            background: rgba(0, 0, 0, 0.55);
-            padding: 6px 18px;
-            border: 1px solid #21d63b55;
-            border-radius: 4px;
-            backdrop-filter: blur(4px);
+            font-family: 'Rajdhani', sans-serif; font-weight:700; font-size:2.2rem;
+            letter-spacing:6px; color:#21d63b; text-shadow:0 0 15px #21d63b88, 0 0 40px #21d63b44;
+            background: rgba(0,0,0,0.55); padding:6px 18px; border:1px solid #21d63b55;
+            border-radius:4px; backdrop-filter:blur(4px);
+            pointer-events: auto; cursor: pointer;
+            transition: background 0.3s;
         }
+        .hud-logo:hover { background: #21d63b22; }
         .hud-status {
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 1rem;
-            color: #21d63b;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 6px 14px;
-            border: 1px solid #21d63b44;
-            border-radius: 20px;
-            letter-spacing: 2px;
-            backdrop-filter: blur(4px);
-            text-shadow: 0 0 8px #21d63b66;
+            font-size:1rem; background: rgba(0,0,0,0.6); padding:6px 14px; border:1px solid #21d63b44;
+            border-radius:20px; letter-spacing:2px; backdrop-filter:blur(4px); text-shadow:0 0 8px #21d63b66;
         }
-
-        /* Тікер новин */
         .hud-ticker {
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 0.85rem;
-            color: #21d63bcc;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 6px 16px;
-            border-left: 3px solid #21d63b;
-            margin-top: 8px;
-            white-space: nowrap;
-            overflow: hidden;
-            backdrop-filter: blur(4px);
-            width: fit-content;
-            max-width: 90%;
-            border-radius: 0 12px 12px 0;
-            text-shadow: 0 0 6px #21d63b44;
+            font-size:0.85rem; color:#21d63bcc; background: rgba(0,0,0,0.7); padding:6px 16px;
+            border-left:3px solid #21d63b; margin-top:8px; white-space:nowrap; overflow:hidden;
+            backdrop-filter:blur(4px); width:fit-content; max-width:90%; border-radius:0 12px 12px 0;
+            text-shadow:0 0 6px #21d63b44;
         }
-        .ticker-text {
-            display: inline-block;
-            animation: tickerScroll 18s linear infinite;
-        }
+        .ticker-text { display:inline-block; animation: tickerScroll 18s linear infinite; }
         @keyframes tickerScroll {
-            0% {
-                transform: translateX(100%);
-            }
-            100% {
-                transform: translateX(-100%);
-            }
+            0% { transform: translateX(100%); } 100% { transform: translateX(-100%); }
         }
-
-        /* Навігація (кнопки) */
-        .hud-nav {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            pointer-events: auto;
-            flex-wrap: wrap;
-            justify-content: center;
-            margin-bottom: 10px;
-        }
+        .hud-nav { display:flex; gap:12px; align-items:center; pointer-events:auto; flex-wrap:wrap; justify-content:center; margin-bottom:10px; }
         .hud-nav button {
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 1rem;
-            font-weight: 600;
-            padding: 10px 22px;
-            background: rgba(0, 0, 0, 0.75);
-            color: #21d63b;
-            border: 1px solid #21d63b66;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            backdrop-filter: blur(6px);
-            text-shadow: 0 0 6px #21d63b44;
-            letter-spacing: 1px;
-            touch-action: manipulation;
+            font-family: 'Share Tech Mono', monospace; font-size:1rem; font-weight:600;
+            padding:10px 22px; background: rgba(0,0,0,0.75); color:#21d63b;
+            border:1px solid #21d63b66; border-radius:6px; cursor:pointer;
+            transition: all 0.25s ease; backdrop-filter:blur(6px);
+            text-shadow:0 0 6px #21d63b44; letter-spacing:1px; touch-action:manipulation;
         }
-        .hud-nav button:hover,
-        .hud-nav button:active {
-            background: #21d63b22;
-            border-color: #21d63b;
-            box-shadow: 0 0 25px #21d63b55;
-            transform: scale(1.04);
+        .hud-nav button:hover, .hud-nav button:active {
+            background:#21d63b22; border-color:#21d63b; box-shadow:0 0 25px #21d63b55; transform:scale(1.04);
         }
-
-        /* Нижній рядок HUD */
-        .hud-bottom {
-            display: flex;
-            justify-content: center;
-            pointer-events: none;
-        }
-
-        /* --- Стилі для CSS3D-панелей (контент в 3D) --- */
+        .hud-bottom { display:flex; justify-content:center; pointer-events:none; flex-direction:column; align-items:center; }
         .panel-3d {
-            width: 420px;
-            max-width: 90vw;
-            background: rgba(10, 10, 10, 0.85);
-            backdrop-filter: blur(12px);
-            border: 1px solid #21d63b55;
-            border-radius: 16px;
-            padding: 28px 30px;
-            color: #d0f0d0;
-            font-family: 'Share Tech Mono', monospace;
-            box-shadow: 0 0 40px rgba(33, 214, 59, 0.15), inset 0 0 60px rgba(33, 214, 59, 0.05);
-            pointer-events: auto;
-            transition: box-shadow 0.3s;
-            overflow-y: auto;
-            max-height: 80vh;
+            width: 420px; max-width:90vw; background: rgba(10,10,10,0.85); backdrop-filter:blur(12px);
+            border:1px solid #21d63b55; border-radius:16px; padding:28px 30px; color:#d0f0d0;
+            font-family: 'Share Tech Mono', monospace; box-shadow:0 0 40px rgba(33,214,59,0.15), inset 0 0 60px rgba(33,214,59,0.05);
+            pointer-events: auto; transition: box-shadow 0.3s; overflow-y:auto; max-height:80vh;
+            touch-action:pan-y; -webkit-overflow-scrolling:touch;
         }
         .panel-3d h2 {
-            font-family: 'Rajdhani', sans-serif;
-            font-weight: 700;
-            font-size: 1.8rem;
-            color: #21d63b;
-            text-shadow: 0 0 20px #21d63b66;
-            margin-bottom: 14px;
-            letter-spacing: 2px;
-            border-bottom: 1px solid #21d63b33;
-            padding-bottom: 8px;
+            font-family: 'Rajdhani', sans-serif; font-weight:700; font-size:1.8rem;
+            color:#21d63b; text-shadow:0 0 20px #21d63b66; margin-bottom:14px;
+            letter-spacing:2px; border-bottom:1px solid #21d63b33; padding-bottom:8px;
         }
-        .panel-3d p,
-        .panel-3d li {
-            font-size: 1rem;
-            line-height: 1.6;
-            color: #ccf0cc;
-        }
-        .panel-3d ul {
-            list-style: none;
-            padding: 0;
-        }
-        .panel-3d li {
-            padding: 6px 0;
-            border-bottom: 1px solid #21d63b1a;
-            display: flex;
-            justify-content: space-between;
-        }
-        .panel-3d .price {
-            color: #21d63b;
-            font-weight: 700;
-            text-shadow: 0 0 8px #21d63b44;
-        }
-        .panel-3d .highlight {
-            color: #21d63b;
-            font-weight: 600;
-        }
-        .panel-3d .phone {
-            font-size: 1.2rem;
-            color: #21d63b;
-            letter-spacing: 1px;
-        }
-
-        /* Адаптивність для малих екранів */
+        .panel-3d p, .panel-3d li { font-size:1rem; line-height:1.6; color:#ccf0cc; }
+        .panel-3d ul { list-style:none; padding:0; }
+        .panel-3d li { padding:6px 0; border-bottom:1px solid #21d63b1a; display:flex; justify-content:space-between; gap:10px; }
+        .panel-3d .price { color:#21d63b; font-weight:700; text-shadow:0 0 8px #21d63b44; }
+        .panel-3d .highlight { color:#21d63b; font-weight:600; }
+        .panel-3d .phone { font-size:1.2rem; color:#21d63b; letter-spacing:1px; }
         @media (max-width: 640px) {
-            .panel-3d {
-                width: 320px;
-                padding: 20px;
-                font-size: 0.9rem;
-            }
-            .panel-3d h2 {
-                font-size: 1.4rem;
-            }
-            .hud-logo {
-                font-size: 1.6rem;
-                padding: 4px 12px;
-            }
-            .hud-status {
-                font-size: 0.75rem;
-                padding: 4px 10px;
-            }
-            .hud-nav button {
-                font-size: 0.8rem;
-                padding: 6px 14px;
-            }
-            .hud-ticker {
-                font-size: 0.7rem;
-                padding: 4px 12px;
-            }
+            .panel-3d { width:320px; padding:20px; font-size:0.9rem; }
+            .panel-3d h2 { font-size:1.4rem; }
+            .hud-logo { font-size:1.6rem; padding:4px 12px; }
+            .hud-status { font-size:0.75rem; padding:4px 10px; }
+            .hud-nav button { font-size:0.8rem; padding:6px 14px; }
+            .hud-ticker { font-size:0.7rem; padding:4px 12px; }
         }
         @media (max-width: 400px) {
-            .panel-3d {
-                width: 280px;
-                padding: 14px;
-            }
+            .panel-3d { width:280px; padding:14px; }
         }
-
-        /* Скроллбар для панелей */
-        .panel-3d::-webkit-scrollbar {
-            width: 4px;
+        .panel-3d::-webkit-scrollbar { width:4px; }
+        .panel-3d::-webkit-scrollbar-track { background:transparent; }
+        .panel-3d::-webkit-scrollbar-thumb { background:#21d63b66; border-radius:4px; }
+        .panel-3d * { user-select:text; -webkit-user-select:text; }
+        #gyro-permission {
+            position:fixed; bottom:100px; left:50%; transform:translateX(-50%); z-index:20;
+            pointer-events:auto; background:rgba(0,0,0,0.8); color:#21d63b; border:1px solid #21d63b;
+            padding:8px 20px; border-radius:20px; font-family:'Share Tech Mono',monospace; cursor:pointer; display:none;
         }
-        .panel-3d::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .panel-3d::-webkit-scrollbar-thumb {
-            background: #21d63b66;
-            border-radius: 4px;
-        }
-
-        /* Заборона виділення тексту всередині панелей */
-        .panel-3d * {
-            user-select: text;
-            -webkit-user-select: text;
+        #desktop-exit {
+            position:fixed; top:20px; right:20px; z-index:30; pointer-events:auto;
+            background:rgba(0,0,0,0.8); color:#21d63b; border:1px solid #21d63b;
+            padding:8px 18px; border-radius:20px; font-family:'Share Tech Mono',monospace; cursor:pointer;
+            display:none; backdrop-filter:blur(6px);
         }
     </style>
 </head>
 <body>
-
-    <!-- ========== HUD (HTML поверх) ========== -->
     <div id="hud">
         <div class="hud-top">
-            <div class="hud-logo">⚡ REANIMATOR</div>
-            <div class="hud-status">ОДЕССА NODE</div>
+            <div class="hud-logo" id="logo-hud">⚡ REANIMATOR</div>
+            <div class="hud-status">ОДЕСА NODE</div>
         </div>
         <div style="flex:1;"></div>
         <div class="hud-ticker">
             <span class="ticker-text">► ГАРАНТІЯ до 12 місяців • Виїзд +200 грн • Прийом 10:00–20:00</span>
         </div>
         <div class="hud-bottom">
-            <div class="hud-nav">
+            <div class="hud-nav" id="nav-buttons">
                 <button onclick="goToPanel(0)">Головна</button>
                 <button onclick="goToPanel(1)">Послуги</button>
                 <button onclick="goToPanel(2)">Гарантія</button>
@@ -299,516 +122,522 @@
         </div>
     </div>
 
-    <!-- ========== Контейнери для рендерерів ========== -->
     <div id="webgl-container"></div>
     <div id="css-container"></div>
+    <button id="gyro-permission">📱 Дозволити рух</button>
+    <button id="desktop-exit">✕ Вийти з режиму стола</button>
 
-    <!-- ========== Підключення CDN ========== -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js">
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FontLoader.js">
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/TextGeometry.js">
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/renderers/CSS3DRenderer.js">
-    </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js">
-    </script>
+    <!-- Бібліотеки -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FontLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/TextGeometry.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/renderers/CSS3DRenderer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 
     <script>
-        // ====================================================================
-        //  Головний скрипт
-        // ====================================================================
-
         (function() {
             'use strict';
 
-            // --- Константи та змінні ---
-            const PANEL_POSITIONS = [
-                { x: 0, z: -6 }, // Головна
-                { x: 7, z: -5.5 }, // Послуги
-                { x: -7, z: -5.5 } // Гарантія
-            ];
-
-            const CAMERA_BASE = [
-                { x: 0, y: 0.8, z: 2.5 },
-                { x: 7, y: 0.8, z: 2.5 },
-                { x: -7, y: 0.8, z: 2.5 }
-            ];
+            // ---------- ГЛОБАЛЬНИЙ СТАН ----------
+            const RAIN_WIDTH = 18, RAIN_HEIGHT = 12;
+            const PANEL_POS = [ {x:0, z:-6}, {x:7, z:-5.5}, {x:-7, z:-5.5} ];
+            const CAM_BASE = [ {x:0, y:0.8, z:2.5}, {x:7, y:0.8, z:2.5}, {x:-7, y:0.8, z:2.5} ];
 
             let currentPanel = 0;
-            let targetCameraPos = { ...CAMERA_BASE[0] };
-            let targetLookAt = { x: PANEL_POSITIONS[0].x, y: 0, z: PANEL_POSITIONS[0].z };
+            let targetCamPos = { ...CAM_BASE[0] };
+            let targetLookAt = { x:0, y:0, z:-6 };
+            let isAnimating = false;
 
-            // Паралакс від гіроскопа (накопичувальне зміщення)
-            let gyroOffsetX = 0;
-            let gyroOffsetY = 0;
-            const GYRO_MAX = 1.2; // максимальне зміщення в одиницях
+            let gyroOffsetX = 0, gyroOffsetY = 0;
+            const GYRO_MAX = 1.2;
+            let gyroEnabled = false;
 
-            // --- Ініціалізація Three.js ---
-            const webglContainer = document.getElementById('webgl-container');
-            const cssContainer = document.getElementById('css-container');
+            let desktopMode = false;
+            let draggedObject = null;
+            let dragOffset = new THREE.Vector3();
+            const desktopObjects = [];
 
-            // Сцена WebGL
+            // ---------- СЦЕНА, РЕНДЕРЕРИ, КАМЕРА ----------
             const webglScene = new THREE.Scene();
             webglScene.background = new THREE.Color(0x0a0a0a);
+            webglScene.fog = new THREE.FogExp2(0x0a0a0a, 0.03);
 
-            // Сцена CSS3D
             const cssScene = new THREE.Scene();
 
-            // Камера (спільна для обох рендерерів)
             const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
             camera.position.set(0, 0.8, 2.5);
             camera.lookAt(0, 0, -6);
 
-            // WebGL рендерер
-            const webglRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+            const webglRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
             webglRenderer.setSize(window.innerWidth, window.innerHeight);
             webglRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             webglRenderer.shadowMap.enabled = true;
             webglRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            webglContainer.appendChild(webglRenderer.domElement);
+            document.getElementById('webgl-container').appendChild(webglRenderer.domElement);
 
-            // CSS3D рендерер
             const cssRenderer = new THREE.CSS3DRenderer();
             cssRenderer.setSize(window.innerWidth, window.innerHeight);
             cssRenderer.domElement.style.position = 'absolute';
             cssRenderer.domElement.style.top = '0';
             cssRenderer.domElement.style.left = '0';
-            cssRenderer.domElement.style.pointerEvents = 'none'; // події через панелі
-            cssContainer.appendChild(cssRenderer.domElement);
-
-            // Дозволити кліки на CSS3D-об'єктах
             cssRenderer.domElement.style.pointerEvents = 'none';
-            // Але самі панелі отримають pointer-events: auto через клас .css3d-object
+            document.getElementById('css-container').appendChild(cssRenderer.domElement);
 
-            // --- Освітлення ---
-            const ambientLight = new THREE.AmbientLight(0x404060, 0.4);
-            webglScene.add(ambientLight);
+            const renderScene = new RenderPass(webglScene, camera);
+            const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+            bloomPass.threshold = 0.2;
+            bloomPass.strength = 1.2;
+            bloomPass.radius = 0.5;
+            const composer = new EffectComposer(webglRenderer);
+            composer.addPass(renderScene);
+            composer.addPass(bloomPass);
 
-            const dirLight = new THREE.DirectionalLight(0x88ffaa, 0.8);
+            // Освітлення
+            webglScene.add(new THREE.AmbientLight(0x404060, 0.5));
+            const dirLight = new THREE.DirectionalLight(0x88ffaa, 0.7);
             dirLight.position.set(2, 5, 4);
             dirLight.castShadow = true;
+            dirLight.shadow.mapSize.set(1024, 1024);
+            dirLight.shadow.camera.near = 0.5;
+            dirLight.shadow.camera.far = 30;
+            dirLight.shadow.camera.left = -10;
+            dirLight.shadow.camera.right = 10;
+            dirLight.shadow.camera.top = 10;
+            dirLight.shadow.camera.bottom = -10;
             webglScene.add(dirLight);
-
-            const backLight = new THREE.DirectionalLight(0x21d63b, 0.3);
-            backLight.position.set(-2, 1, -6);
-            webglScene.add(backLight);
-
-            const pointLight = new THREE.PointLight(0x21d63b, 0.6, 12);
+            webglScene.add(new THREE.DirectionalLight(0x21d63b, 0.4).translateX(-2).translateY(1).translateZ(-6));
+            const pointLight = new THREE.PointLight(0x21d63b, 0.6, 15);
             pointLight.position.set(0, 3, -4);
             webglScene.add(pointLight);
 
-            // --- 1. Матричний дождь (WebGL) ---
-            function createMatrixRain() {
-                const COLUMNS = 85;
-                const DROPS_PER_COLUMN = 28;
-                const WIDTH = 18;
-                const HEIGHT = 12;
-
-                // Створюємо текстуру з символами
-                const canvas = document.createElement('canvas');
-                canvas.width = 64;
-                canvas.height = 64;
-                const ctx = canvas.getContext('2d');
-                ctx.fillStyle = 'transparent';
-                ctx.fillRect(0, 0, 64, 64);
-                ctx.font = 'bold 42px "Share Tech Mono", monospace';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-
-                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+{}[]';
-                const texture = new THREE.CanvasTexture(canvas);
-
-                // Створюємо спрайти для кожної краплі
-                const drops = [];
-                const columnWidth = WIDTH / COLUMNS;
-
-                for (let c = 0; c < COLUMNS; c++) {
-                    const x = -WIDTH / 2 + c * columnWidth + columnWidth / 2 + (Math.random() - 0.5) * columnWidth * 0.6;
-                    const count = Math.floor(Math.random() * DROPS_PER_COLUMN * 0.8 + DROPS_PER_COLUMN * 0.2);
-                    for (let i = 0; i < count; i++) {
-                        const y = (Math.random() - 0.5) * HEIGHT * 1.8;
-                        const speed = 0.02 + Math.random() * 0.04;
-                        const char = chars[Math.floor(Math.random() * chars.length)];
-                        // Малюємо символ на текстурі
-                        ctx.clearRect(0, 0, 64, 64);
-                        ctx.fillStyle = '#eeffee';
-                        ctx.fillText(char, 32, 32);
-                        texture.needsUpdate = true;
-
-                        const material = new THREE.SpriteMaterial({
-                            map: texture,
-                            transparent: true,
-                            opacity: 0.9,
-                            depthWrite: false,
-                            blending: THREE.AdditiveBlending,
-                            color: new THREE.Color(0x21d63b)
-                        });
-                        const sprite = new THREE.Sprite(material);
-                        sprite.position.set(x, y, -4 + Math.random() * 2 - 1);
-                        sprite.scale.set(0.18, 0.18, 1);
-
-                        // Зберігаємо дані
-                        drops.push({
-                            sprite: sprite,
-                            x: x,
-                            y: y,
-                            speed: speed,
-                            char: char,
-                            columnIndex: c,
-                            // для зміни кольору: голова біла
-                            isHead: false,
-                            headTimer: 0
-                        });
-                        webglScene.add(sprite);
-                    }
-                }
-
-                // Позначимо "голови" колонок (найвищі точки)
-                // Для простоти будемо в кожному кадрі визначати голову як найвищу краплю в колонці
-                // Але зберігаємо посилання на всі краплі
-                return drops;
+            // ---------- АТЛАС СИМВОЛІВ (8x8) ----------
+            const SYMBOLS = ['ｱ','ｲ','ｳ','ｴ','ｵ','0','1','2','3','4','5','6','7','8','9','ﾘ','ﾇ','ﾏ','+','-','*','/','#','&'];
+            const atlasCanvas = document.createElement('canvas');
+            atlasCanvas.width = 512;
+            atlasCanvas.height = 512;
+            const atlasCtx = atlasCanvas.getContext('2d');
+            const ATLAS_COLS = 8, ATLAS_ROWS = 8, CELL_SIZE = 64;
+            for (let i = 0; i < SYMBOLS.length; i++) {
+                const col = i % ATLAS_COLS;
+                const row = Math.floor(i / ATLAS_COLS);
+                const x = col * CELL_SIZE, y = row * CELL_SIZE;
+                atlasCtx.fillStyle = '#ffffff';
+                atlasCtx.font = 'bold 48px "Share Tech Mono", monospace';
+                atlasCtx.textAlign = 'center';
+                atlasCtx.textBaseline = 'middle';
+                atlasCtx.fillText(SYMBOLS[i], x + CELL_SIZE/2, y + CELL_SIZE/2);
             }
+            const atlasTexture = new THREE.CanvasTexture(atlasCanvas);
+            atlasTexture.minFilter = THREE.LinearFilter;
+            atlasTexture.magFilter = THREE.LinearFilter;
 
-            const rainDrops = createMatrixRain();
+            // ---------- МАТРИЧНИЙ ДОЩ (GPU-версія) ----------
+            const COLUMNS = 65, DROPS_PER_COL = 14;
+            const TOTAL_DROPS = COLUMNS * DROPS_PER_COL;
+            const colWidth = RAIN_WIDTH / COLUMNS;
 
-            // Функція оновлення дождю
-            function updateRain() {
-                const HEIGHT = 12;
-                const halfH = HEIGHT / 2;
+            // Атрибути для шейдера
+            const startYArr = new Float32Array(TOTAL_DROPS);
+            const speedArr = new Float32Array(TOTAL_DROPS);
+            const symbolIndexArr = new Float32Array(TOTAL_DROPS);
+            const baseXArr = new Float32Array(TOTAL_DROPS);
 
-                // Для кожної колонки знайдемо найвищу точку (голову)
-                const columnHeads = {};
-                for (const drop of rainDrops) {
-                    const key = Math.round(drop.x * 100);
-                    if (!columnHeads[key] || drop.y > columnHeads[key].y) {
-                        columnHeads[key] = drop;
-                    }
-                }
-
-                for (const drop of rainDrops) {
-                    // Рух вниз
-                    drop.y -= drop.speed * 0.8;
-                    if (drop.y < -halfH - 1) {
-                        drop.y = halfH + Math.random() * 2;
-                        drop.speed = 0.02 + Math.random() * 0.04;
-                        drop.x = -WIDTH / 2 + Math.random() * WIDTH;
-                        // Оновимо символ
-                        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+{}[]';
-                        drop.char = chars[Math.floor(Math.random() * chars.length)];
-                        // Оновимо текстуру
-                        const canvas = drop.sprite.material.map.image;
-                        const ctx = canvas.getContext('2d');
-                        ctx.clearRect(0, 0, 64, 64);
-                        ctx.fillStyle = '#eeffee';
-                        ctx.font = 'bold 42px "Share Tech Mono", monospace';
-                        ctx.textAlign = 'center';
-                        ctx.textBaseline = 'middle';
-                        ctx.fillText(drop.char, 32, 32);
-                        drop.sprite.material.map.needsUpdate = true;
-                    }
-
-                    drop.sprite.position.y = drop.y;
-
-                    // Колір: якщо це голова колонки — білий, інакше зелений з затуханням
-                    const key = Math.round(drop.x * 100);
-                    const head = columnHeads[key];
-                    if (head === drop) {
-                        drop.sprite.material.color.setHex(0xeeffee);
-                        drop.sprite.material.opacity = 1.0;
-                    } else {
-                        // Затухання в залежності від відстані до голови
-                        const dist = Math.abs(drop.y - head.y) / 3;
-                        const alpha = Math.max(0.05, 1 - dist * 0.5);
-                        drop.sprite.material.opacity = alpha * 0.9;
-                        // Колір від яскраво-зеленого до темно-зеленого
-                        const green = 0.3 + 0.7 * (1 - dist * 0.4);
-                        drop.sprite.material.color.setHSL(0.33, 0.9, green * 0.5);
-                    }
+            for (let c = 0, idx = 0; c < COLUMNS; c++) {
+                const cx = -RAIN_WIDTH/2 + c * colWidth + colWidth/2 + (Math.random() - 0.5) * colWidth * 0.6;
+                for (let d = 0; d < DROPS_PER_COL; d++) {
+                    baseXArr[idx] = cx;
+                    startYArr[idx] = (Math.random() * 2 - 1) * RAIN_HEIGHT;
+                    speedArr[idx] = 0.8 + Math.random() * 2.0;
+                    symbolIndexArr[idx] = Math.floor(Math.random() * SYMBOLS.length);
+                    idx++;
                 }
             }
 
-            // --- 2. 3D-текст (REANIMATOR) через TextGeometry ---
-            let logoMesh = null;
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(TOTAL_DROPS * 3), 3));
+            geometry.setAttribute('startY', new THREE.BufferAttribute(startYArr, 1));
+            geometry.setAttribute('speed', new THREE.BufferAttribute(speedArr, 1));
+            geometry.setAttribute('symbolIndex', new THREE.BufferAttribute(symbolIndexArr, 1));
+            geometry.setAttribute('baseX', new THREE.BufferAttribute(baseXArr, 1));
 
-            function createLogoText(font) {
-                const textGeo = new THREE.TextGeometry('REANIMATOR', {
-                    font: font,
-                    size: 0.7,
-                    height: 0.25,
-                    curveSegments: 6,
-                    bevelEnabled: true,
-                    bevelThickness: 0.03,
-                    bevelSize: 0.02,
-                    bevelSegments: 3
-                });
-                textGeo.computeBoundingBox();
-                const centerX = (textGeo.boundingBox.max.x + textGeo.boundingBox.min.x) / 2;
-                const centerY = (textGeo.boundingBox.max.y + textGeo.boundingBox.min.y) / 2;
-                const centerZ = (textGeo.boundingBox.max.z + textGeo.boundingBox.min.z) / 2;
+            const uniforms = {
+                uTime: { value: 0 },
+                uAtlas: { value: atlasTexture },
+                uRainHeight: { value: RAIN_HEIGHT },
+                uAtlasCols: { value: ATLAS_COLS },
+                uAtlasRows: { value: ATLAS_ROWS }
+            };
 
-                const material = new THREE.MeshStandardMaterial({
-                    color: 0x21d63b,
-                    emissive: 0x21d63b,
-                    emissiveIntensity: 0.6,
-                    metalness: 0.2,
-                    roughness: 0.3,
-                    transparent: true,
-                    opacity: 0.95
-                });
-                const mesh = new THREE.Mesh(textGeo, material);
-                mesh.position.set(-centerX, 1.2 - centerY, -3.2 - centerZ);
-                mesh.castShadow = true;
-                mesh.receiveShadow = true;
-                webglScene.add(mesh);
-                logoMesh = mesh;
-
-                // Додамо невелике світіння навколо (PointLight вже є)
-                // Додамо ще один маленький промінь
-                const glow = new THREE.PointLight(0x21d63b, 0.3, 6);
-                glow.position.copy(mesh.position);
-                glow.position.y += 0.3;
-                webglScene.add(glow);
-
-                return mesh;
-            }
-
-            // --- 3. CSS3D панелі з контентом ---
-            function createPanelHTML(index) {
-                const div = document.createElement('div');
-                div.className = 'panel-3d css3d-object';
-
-                if (index === 0) {
-                    // Головна
-                    div.innerHTML = `
-                <h2>⚡ REANIMATOR</h2>
-                <p style="font-size:0.95rem; color:#aaa;">Комп'ютерний сервіс в Одесі</p>
-                <p style="margin-top:12px;"><span class="highlight">📞</span> <span class="phone">+380 66 7000 533</span><br>
-                <span class="highlight">📞</span> <span class="phone">+380 63 7000 533</span></p>
-                <p><span class="highlight">⏰</span> Прийом: 10:00 – 20:00</p>
-                <p><span class="highlight">👨‍🔧</span> Майстер: Олександр Олександрович</p>
-                <p style="margin-top:8px; font-size:0.9rem; color:#888;">Гарантія до 12 місяців</p>
-              `;
-                } else if (index === 1) {
-                    // Послуги
-                    div.innerHTML = `
-                <h2>🛠 ПОСЛУГИ</h2>
-                <ul>
-                  <li><span>Чистка ноутбука / ПК</span> <span class="price">1000 грн</span></li>
-                  <li><span>Встановлення Windows / Linux</span> <span class="price">1000 грн</span></li>
-                  <li><span>Smart TV (налаштування)</span> <span class="price">600 грн</span></li>
-                  <li><span>Видалення вірусів</span> <span class="price">500 грн</span></li>
-                  <li><span>Апгрейд (від)</span> <span class="price">від 300 грн</span></li>
-                  <li><span>Виїзд майстра</span> <span class="price">+200 грн</span></li>
-                </ul>
-                <p style="margin-top:10px; font-size:0.9rem; color:#888;">Гарантія на роботи до 12 місяців</p>
-              `;
-                } else if (index === 2) {
-                    // Гарантія
-                    div.innerHTML = `
-                <h2>🛡 ГАРАНТІЯ</h2>
-                <p style="font-size:1.1rem;">Ми надаємо <span class="highlight">гарантію до 12 місяців</span> на всі види робіт!</p>
-                <ul style="margin-top:12px;">
-                  <li><span>🔧 Чистка та профілактика</span> <span class="price">6 міс.</span></li>
-                  <li><span>💻 Встановлення ОС</span> <span class="price">6 міс.</span></li>
-                  <li><span>🛡 Видалення вірусів</span> <span class="price">3 міс.</span></li>
-                  <li><span>⚡ Апгрейд комплектуючих</span> <span class="price">12 міс.</span></li>
-                </ul>
-                <p style="margin-top:12px; color:#888;">Деталі уточнюйте у майстра.</p>
-              `;
+            const vertexShader = `
+                attribute float startY;
+                attribute float speed;
+                attribute float symbolIndex;
+                attribute float baseX;
+                varying float vSymbolIndex;
+                varying float vAlpha;
+                uniform float uTime;
+                uniform float uRainHeight;
+                void main() {
+                    float halfH = uRainHeight / 2.0;
+                    float y = mod(startY - speed * uTime + halfH, uRainHeight) - halfH;
+                    vec3 pos = vec3(baseX, y, -4.0 + fract(symbolIndex * 0.73) * 3.0 - 1.5);
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+                    gl_PointSize = 16.0;
+                    vSymbolIndex = symbolIndex;
+                    vAlpha = 1.0 - abs(y) / halfH * 0.5;
                 }
-                return div;
-            }
+            `;
 
-            const panelObjects = [];
-
-            function initPanels() {
-                for (let i = 0; i < 3; i++) {
-                    const div = createPanelHTML(i);
-                    const obj = new THREE.CSS3DObject(div);
-                    const pos = PANEL_POSITIONS[i];
-                    obj.position.set(pos.x, 0.2, pos.z);
-                    // Невеликий поворот для ефекту
-                    if (i === 1) obj.rotation.y = -0.12;
-                    else if (i === 2) obj.rotation.y = 0.12;
-                    cssScene.add(obj);
-                    panelObjects.push(obj);
+            const fragmentShader = `
+                varying float vSymbolIndex;
+                varying float vAlpha;
+                uniform sampler2D uAtlas;
+                uniform float uAtlasCols;
+                uniform float uAtlasRows;
+                void main() {
+                    float cols = uAtlasCols;
+                    float rows = uAtlasRows;
+                    float idx = floor(vSymbolIndex);
+                    float col = mod(idx, cols);
+                    float row = floor(idx / cols);
+                    // Використовуємо gl_PointCoord для вибірки потрібної частини атласу
+                    vec2 uv = vec2(
+                        (col + gl_PointCoord.x) / cols,
+                        (row + (1.0 - gl_PointCoord.y)) / rows
+                    );
+                    vec4 texColor = texture2D(uAtlas, uv);
+                    gl_FragColor = vec4(0.2, 0.9, 0.3, texColor.a * vAlpha);
                 }
-            }
+            `;
 
-            // --- 4. Завантаження шрифту та ініціалізація ---
-            let fontLoaded = false;
-            const fontLoader = new THREE.FontLoader();
+            const shaderMaterial = new THREE.ShaderMaterial({
+                uniforms: uniforms,
+                vertexShader: vertexShader,
+                fragmentShader: fragmentShader,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+                transparent: true
+            });
 
-            fontLoader.load(
-                'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/fonts/helvetiker_regular.typeface.json',
-                function(font) {
-                    createLogoText(font);
-                    fontLoaded = true;
-                },
-                undefined,
-                function(err) {
-                    console.warn('Не вдалося завантажити шрифт, 3D-текст буде пропущено', err);
+            const rainPoints = new THREE.Points(geometry, shaderMaterial);
+            webglScene.add(rainPoints);
+
+            // Періодична зміна символів (кожні 200 мс змінюємо кожну 10-ту каплю)
+            setInterval(() => {
+                const arr = geometry.attributes.symbolIndex.array;
+                for (let i = 0; i < TOTAL_DROPS; i += 10) {
+                    arr[i] = Math.floor(Math.random() * SYMBOLS.length);
                 }
+                geometry.attributes.symbolIndex.needsUpdate = true;
+            }, 200);
+
+            // ---------- ПРОЦЕДУРНА ПЛАТА ----------
+            const boardCanvas = document.createElement('canvas');
+            boardCanvas.width = 1024; boardCanvas.height = 1024;
+            const boardCtx = boardCanvas.getContext('2d');
+            const boardTexture = new THREE.CanvasTexture(boardCanvas);
+            const boardPlane = new THREE.Mesh(
+                new THREE.PlaneGeometry(20, 20),
+                new THREE.MeshBasicMaterial({ map: boardTexture, transparent: true, opacity: 0.25, depthWrite: false, blending: THREE.AdditiveBlending })
             );
+            boardPlane.rotation.x = -Math.PI / 2;
+            boardPlane.position.y = -0.49;
+            webglScene.add(boardPlane);
 
-            // Ініціалізація панелей
-            initPanels();
+            function drawCircuitBoard() {
+                boardCtx.clearRect(0, 0, 1024, 1024);
+                boardCtx.strokeStyle = '#21d63b';
+                boardCtx.lineWidth = 2;
+                for (let i = 0; i < 30; i++) {
+                    const x = Math.random() * 1024, y = Math.random() * 1024;
+                    boardCtx.beginPath();
+                    boardCtx.moveTo(x, y);
+                    boardCtx.lineTo(x + (Math.random() - 0.5) * 300, y + (Math.random() - 0.5) * 300);
+                    boardCtx.stroke();
+                }
+                for (let i = 0; i < 60; i++) {
+                    boardCtx.beginPath();
+                    boardCtx.arc(Math.random() * 1024, Math.random() * 1024, 5 + Math.random() * 12, 0, Math.PI * 2);
+                    boardCtx.stroke();
+                }
+                boardTexture.needsUpdate = true;
+            }
+            drawCircuitBoard();
+            let boardTimer = 0;
 
-            // Додамо декоративні елементи до WebGL-сцени (підлога, сітка)
+            // Декоративна сітка та кільце
             const gridHelper = new THREE.GridHelper(20, 20, 0x21d63b, 0x11441a);
             gridHelper.position.y = -0.5;
             webglScene.add(gridHelper);
 
-            // Легкий туман
-            webglScene.fog = new THREE.FogExp2(0x0a0a0a, 0.035);
+            const ring = new THREE.Mesh(
+                new THREE.TorusGeometry(8, 0.02, 16, 100),
+                new THREE.MeshStandardMaterial({ color: 0x21d63b, emissive: 0x21d63b, emissiveIntensity: 0.8, roughness: 0.3, metalness: 0.1 })
+            );
+            ring.position.set(0, -0.1, -5);
+            ring.rotation.x = Math.PI / 2;
+            webglScene.add(ring);
 
-            // --- 5. Навігація (GSAP) ---
-            let isAnimating = false;
+            const particleRing = (() => {
+                const count = 200;
+                const pos = new Float32Array(count * 3), col = new Float32Array(count * 3);
+                for (let i = 0; i < count; i++) {
+                    const ang = (i / count) * Math.PI * 2;
+                    const r = 2.5 + Math.random() * 0.8;
+                    pos[i*3] = Math.cos(ang) * r;
+                    pos[i*3+1] = 1.2 + Math.sin(i * 5) * 0.5;
+                    pos[i*3+2] = -3.5 + Math.sin(ang * 2) * 1.5;
+                    col[i*3] = 0.1 + Math.random() * 0.4;
+                    col[i*3+1] = 0.7 + Math.random() * 0.3;
+                    col[i*3+2] = 0.2 + Math.random() * 0.3;
+                }
+                const g = new THREE.BufferGeometry();
+                g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+                g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+                const pts = new THREE.Points(g, new THREE.PointsMaterial({ size: 0.06, blending: THREE.AdditiveBlending, depthWrite: false, vertexColors: true, transparent: true, opacity: 0.8 }));
+                webglScene.add(pts);
+                return pts;
+            })();
 
-            window.goToPanel = function(index) {
-                if (isAnimating || index === currentPanel) return;
-                isAnimating = true;
+            // ---------- 3D-ЛОГОТИП (завантаження з CDN; для продакшена замінити на base64) ----------
+            let logoMesh;
+            const fontLoader = new THREE.FontLoader();
+            fontLoader.load('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/fonts/helvetiker_regular.typeface.json',
+                (font) => {
+                    const textGeo = new THREE.TextGeometry('REANIMATOR', {
+                        font, size: 0.7, height: 0.25, curveSegments: 6,
+                        bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.02, bevelSegments: 3
+                    });
+                    textGeo.computeBoundingBox();
+                    const cx = (textGeo.boundingBox.max.x + textGeo.boundingBox.min.x) / 2;
+                    const cy = (textGeo.boundingBox.max.y + textGeo.boundingBox.min.y) / 2;
+                    const cz = (textGeo.boundingBox.max.z + textGeo.boundingBox.min.z) / 2;
+                    const mesh = new THREE.Mesh(textGeo, new THREE.MeshStandardMaterial({
+                        color: 0x21d63b, emissive: 0x114411, emissiveIntensity: 0.5,
+                        metalness: 0.25, roughness: 0.4, transparent: true, opacity: 0.95
+                    }));
+                    mesh.position.set(-cx, 1.2 - cy, -3.2 - cz);
+                    mesh.castShadow = true;
+                    mesh.receiveShadow = true;
+                    webglScene.add(mesh);
+                    logoMesh = mesh;
 
-                const targetPos = CAMERA_BASE[index];
-                const targetLook = { x: PANEL_POSITIONS[index].x, y: 0, z: PANEL_POSITIONS[index].z };
+                    const gl = new THREE.PointLight(0x21d63b, 0.5, 7);
+                    gl.position.copy(mesh.position).add(new THREE.Vector3(0, 0.5, 0));
+                    webglScene.add(gl);
+                },
+                undefined,
+                (err) => console.warn('Шрифт не завантажено:', err)
+            );
 
-                // Поточні параметри камери
-                const startPos = {
-                    x: camera.position.x,
-                    y: camera.position.y,
-                    z: camera.position.z
-                };
-                const startRotZ = camera.rotation.z || 0;
-
-                // Анімація позиції
-                const tl = gsap.timeline({
-                    onComplete: function() {
-                        isAnimating = false;
-                        currentPanel = index;
-                        // Скидаємо крен
-                        gsap.to(camera.rotation, {
-                            z: 0,
-                            duration: 0.4,
-                            ease: 'power2.out',
-                            overwrite: 'auto'
-                        });
-                    }
-                });
-
-                // Рух камери
-                tl.to(camera.position, {
-                    x: targetPos.x,
-                    y: targetPos.y,
-                    z: targetPos.z,
-                    duration: 1.4,
-                    ease: 'power2.inOut',
-                    onUpdate: function() {
-                        camera.lookAt(targetLook.x, targetLook.y, targetLook.z);
-                    }
-                }, 0);
-
-                // Крен (rotation.z) – легке обертання
-                tl.to(camera.rotation, {
-                    z: 0.12,
-                    duration: 0.4,
-                    ease: 'power2.out',
-                    overwrite: 'auto'
-                }, 0.0);
-                tl.to(camera.rotation, {
-                    z: -0.08,
-                    duration: 0.5,
-                    ease: 'power2.inOut',
-                    overwrite: 'auto'
-                }, 0.5);
-                tl.to(camera.rotation, {
-                    z: 0.05,
-                    duration: 0.3,
-                    ease: 'power2.out',
-                    overwrite: 'auto'
-                }, 1.0);
-                // Завершення крену буде в onComplete
-
-                // Оновлюємо цілі для паралаксу
-                targetCameraPos = { ...targetPos };
-                targetLookAt = { ...targetLook };
-            };
-
-            // --- 6. Паралакс від гіроскопа (мобільні) ---
-            if (window.DeviceOrientationEvent) {
-                window.addEventListener('deviceorientation', function(event) {
-                    const beta = event.beta || 0; // -180..180
-                    const gamma = event.gamma || 0; // -90..90
-
-                    // Нормалізуємо: beta (нахил вперед-назад), gamma (нахил вліво-вправо)
-                    // Обмежуємо значення
-                    const b = Math.max(-30, Math.min(30, beta)) / 30;
-                    const g = Math.max(-30, Math.min(30, gamma)) / 30;
-
-                    gyroOffsetX = g * GYRO_MAX;
-                    gyroOffsetY = -b * GYRO_MAX * 0.6; // трохи менше по вертикалі
-                }, { passive: true });
+            // ---------- CSS3D ПАНЕЛІ ----------
+            const panelObjects = [];
+            function createPanelHTML(idx) {
+                const div = document.createElement('div');
+                div.className = 'panel-3d';
+                if (idx === 0) div.innerHTML = `<h2>⚡ REANIMATOR</h2><p style="font-size:0.95rem;color:#aaa;">Комп'ютерний сервіс в Одесі</p><p style="margin-top:12px;"><span class="highlight">📞</span> <span class="phone">+380 66 7000 533</span><br><span class="highlight">📞</span> <span class="phone">+380 63 7000 533</span></p><p><span class="highlight">⏰</span> Прийом: 10:00 – 20:00</p><p><span class="highlight">👨‍🔧</span> Майстер: Олександр Олександрович</p><p style="margin-top:8px; font-size:0.9rem; color:#888;">Гарантія до 12 місяців</p>`;
+                else if (idx === 1) div.innerHTML = `<h2>🛠 ПОСЛУГИ</h2><ul><li><span>Чистка ноутбука / ПК</span> <span class="price">1000 грн</span></li><li><span>Встановлення Windows / Linux</span> <span class="price">1000 грн</span></li><li><span>Smart TV (налаштування)</span> <span class="price">600 грн</span></li><li><span>Видалення вірусів</span> <span class="price">500 грн</span></li><li><span>Апгрейд (від)</span> <span class="price">від 300 грн</span></li><li><span>Виїзд майстра</span> <span class="price">+200 грн</span></li></ul><p style="margin-top:10px; font-size:0.9rem; color:#888;">Гарантія на роботи до 12 місяців</p>`;
+                else div.innerHTML = `<h2>🛡 ГАРАНТІЯ</h2><p style="font-size:1.1rem;">Ми надаємо <span class="highlight">гарантію до 12 місяців</span> на всі види робіт!</p><ul style="margin-top:12px;"><li><span>🔧 Чистка та профілактика</span> <span class="price">6 міс.</span></li><li><span>💻 Встановлення ОС</span> <span class="price">6 міс.</span></li><li><span>🛡 Видалення вірусів</span> <span class="price">3 міс.</span></li><li><span>⚡ Апгрейд комплектуючих</span> <span class="price">12 міс.</span></li></ul><p style="margin-top:12px; color:#888;">Деталі уточнюйте у майстра.</p>`;
+                return div;
+            }
+            for (let i = 0; i < 3; i++) {
+                const obj = new THREE.CSS3DObject(createPanelHTML(i));
+                obj.position.set(PANEL_POS[i].x, 0.2, PANEL_POS[i].z);
+                if (i === 1) obj.rotation.y = -0.12;
+                else if (i === 2) obj.rotation.y = 0.12;
+                cssScene.add(obj);
+                panelObjects.push(obj);
             }
 
-            // --- 7. Анімаційний цикл ---
+            // ---------- РЕЖИМ «РОБОЧИЙ СТІЛ» ----------
+            function createDesktopObjects() {
+                const geomCube = new THREE.BoxGeometry(0.25, 0.25, 0.25);
+                const geomSphere = new THREE.SphereGeometry(0.2, 16, 16);
+                const colors = [0xff5522, 0x22aaff, 0xffdd44, 0xff44aa, 0x44ffaa];
+                for (let i = 0; i < 20; i++) {
+                    const geo = i % 2 === 0 ? geomCube : geomSphere;
+                    const mat = new THREE.MeshStandardMaterial({ color: colors[i % colors.length], emissive: new THREE.Color(0x111111) });
+                    const mesh = new THREE.Mesh(geo, mat);
+                    mesh.position.set((Math.random() - 0.5) * 8, Math.random() * 3 + 0.5, (Math.random() - 0.5) * 6 - 4);
+                    mesh.castShadow = true; mesh.receiveShadow = true;
+                    mesh.userData.isDesktopObj = true;
+                    mesh.visible = false;
+                    webglScene.add(mesh);
+                    desktopObjects.push(mesh);
+                }
+            }
+            createDesktopObjects();
+
+            const exitBtn = document.getElementById('desktop-exit');
+            exitBtn.addEventListener('click', () => { if (desktopMode) toggleDesktopMode(); });
+
+            function toggleDesktopMode() {
+                desktopMode = !desktopMode;
+                if (desktopMode) {
+                    rainPoints.visible = false;
+                    panelObjects.forEach(p => p.visible = false);
+                    desktopObjects.forEach(o => o.visible = true);
+                    document.getElementById('nav-buttons').style.pointerEvents = 'none';
+                    document.getElementById('logo-hud').style.opacity = '0.6';
+                    exitBtn.style.display = 'block';
+                    gsap.to(targetCamPos, { x: 0, y: 3, z: 7, duration: 1.2, ease: 'power2.inOut' });
+                    gsap.to(targetLookAt, { x: 0, y: 0, z: -2, duration: 1.2, ease: 'power2.inOut' });
+                } else {
+                    rainPoints.visible = true;
+                    panelObjects.forEach(p => p.visible = true);
+                    desktopObjects.forEach(o => o.visible = false);
+                    document.getElementById('nav-buttons').style.pointerEvents = 'auto';
+                    document.getElementById('logo-hud').style.opacity = '1';
+                    exitBtn.style.display = 'none';
+                    goToPanel(currentPanel);
+                }
+            }
+            document.getElementById('logo-hud').addEventListener('click', toggleDesktopMode);
+
+            // ---------- ПЕРЕТЯГУВАННЯ ОБ'ЄКТІВ (з offset) ----------
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+            const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+
+            webglRenderer.domElement.addEventListener('pointerdown', onPointerDown);
+            window.addEventListener('pointermove', onPointerMove);
+            window.addEventListener('pointerup', onPointerUp);
+
+            function getIntersection(event) {
+                const rect = webglRenderer.domElement.getBoundingClientRect();
+                mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+                mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+                raycaster.setFromCamera(mouse, camera);
+            }
+
+            function onPointerDown(event) {
+                getIntersection(event);
+                if (logoMesh) {
+                    const intersects = raycaster.intersectObject(logoMesh);
+                    if (intersects.length > 0) {
+                        toggleDesktopMode();
+                        return;
+                    }
+                }
+                if (!desktopMode) return;
+                const intersects = raycaster.intersectObjects(desktopObjects);
+                if (intersects.length > 0) {
+                    draggedObject = intersects[0].object;
+                    const target = new THREE.Vector3();
+                    raycaster.ray.intersectPlane(groundPlane, target);
+                    dragOffset.copy(draggedObject.position).sub(target);
+                    webglRenderer.domElement.style.cursor = 'grabbing';
+                }
+            }
+
+            function onPointerMove(event) {
+                if (!draggedObject) return;
+                getIntersection(event);
+                const target = new THREE.Vector3();
+                if (raycaster.ray.intersectPlane(groundPlane, target)) {
+                    draggedObject.position.copy(target.add(dragOffset));
+                    draggedObject.position.y += 0.4;
+                }
+            }
+
+            function onPointerUp() {
+                if (draggedObject) {
+                    draggedObject = null;
+                    webglRenderer.domElement.style.cursor = '';
+                }
+            }
+
+            // ---------- ГІРОСКОП ----------
+            const gyroBtn = document.getElementById('gyro-permission');
+            function enableGyro() {
+                if (typeof DeviceOrientationEvent !== 'undefined') {
+                    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                        DeviceOrientationEvent.requestPermission().then(state => {
+                            if (state === 'granted') { gyroEnabled = true; gyroBtn.style.display = 'none'; }
+                        }).catch(() => {});
+                    } else {
+                        gyroEnabled = true;
+                        gyroBtn.style.display = 'none';
+                    }
+                }
+            }
+            if (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                gyroBtn.style.display = 'block';
+                gyroBtn.addEventListener('click', enableGyro);
+            }
+            window.addEventListener('deviceorientation', (event) => {
+                if (!gyroEnabled) return;
+                const beta = Math.max(-30, Math.min(30, event.beta || 0)) / 30;
+                const gamma = Math.max(-30, Math.min(30, event.gamma || 0)) / 30;
+                gyroOffsetX = gamma * GYRO_MAX;
+                gyroOffsetY = -beta * GYRO_MAX * 0.6;
+            }, { passive: true });
+
+            // ---------- НАВІГАЦІЯ МІЖ ПАНЕЛЯМИ ----------
+            window.goToPanel = function(index) {
+                if (isAnimating || index === currentPanel || desktopMode) return;
+                isAnimating = true;
+                const pos = CAM_BASE[index];
+                const look = { x: PANEL_POS[index].x, y: 0, z: PANEL_POS[index].z };
+                const maxRoll = index === 1 ? 0.2 : (index === 2 ? -0.2 : 0);
+                const rollObj = { value: 0 };
+                const tl = gsap.timeline({ onComplete: () => { isAnimating = false; currentPanel = index; camera.up.set(0, 1, 0); } });
+                tl.to(rollObj, { value: maxRoll, duration: 0.4, ease: 'power2.out' }, 0);
+                tl.to(rollObj, { value: -maxRoll * 0.5, duration: 0.5, ease: 'power2.inOut' }, 0.5);
+                tl.to(rollObj, { value: 0, duration: 0.4, ease: 'power2.out' }, 1.0);
+                tl.to(camera.position, {
+                    x: pos.x, y: pos.y, z: pos.z, duration: 1.4, ease: 'power2.inOut',
+                    onUpdate: () => {
+                        camera.up.set(Math.sin(rollObj.value), Math.cos(rollObj.value), 0).normalize();
+                        camera.lookAt(look.x, look.y, look.z);
+                    }
+                }, 0);
+                targetCamPos = { ...pos };
+                targetLookAt = { ...look };
+            };
+
+            // ---------- ГОЛОВНИЙ ЦИКЛ ----------
+            let lastTime = performance.now();
             function animate() {
                 requestAnimationFrame(animate);
+                const now = performance.now();
+                const delta = (now - lastTime) / 1000;
+                lastTime = now;
 
-                // Оновлення дождю
-                updateRain();
+                uniforms.uTime.value += delta;
 
-                // Паралакс: зміщуємо камеру відносно цільової позиції
-                const baseX = targetCameraPos.x;
-                const baseY = targetCameraPos.y;
-                const baseZ = targetCameraPos.z;
-
-                // Застосовуємо зміщення від гіроскопа, якщо не анімуємо
-                // Під час анімації паралакс теж працює, але згладжено
-                let offsetX = 0,
-                    offsetY = 0;
-                if (!isAnimating) {
-                    offsetX = gyroOffsetX;
-                    offsetY = gyroOffsetY;
-                } else {
-                    // Під час анімації зменшуємо вплив паралаксу
-                    offsetX = gyroOffsetX * 0.2;
-                    offsetY = gyroOffsetY * 0.2;
+                boardTimer += delta;
+                if (boardTimer > 3.0) {
+                    boardTimer = 0;
+                    drawCircuitBoard();
                 }
 
-                camera.position.x = baseX + offsetX;
-                camera.position.y = baseY + offsetY;
-                camera.position.z = baseZ;
+                particleRing.rotation.y += 0.002;
+                ring.rotation.z += 0.001;
 
-                // Завжди дивимося на ціль
+                const offX = isAnimating ? gyroOffsetX * 0.2 : gyroOffsetX;
+                const offY = isAnimating ? gyroOffsetY * 0.2 : gyroOffsetY;
+                camera.position.set(targetCamPos.x + offX, targetCamPos.y + offY, targetCamPos.z);
                 camera.lookAt(targetLookAt.x, targetLookAt.y, targetLookAt.z);
 
-                // Рендеринг
-                webglRenderer.render(webglScene, camera);
+                composer.render();
                 cssRenderer.render(cssScene, camera);
             }
 
-            // --- 8. Resize ---
-            window.addEventListener('resize', function() {
-                const w = window.innerWidth;
-                const h = window.innerHeight;
+            window.addEventListener('resize', () => {
+                const w = window.innerWidth, h = window.innerHeight;
                 camera.aspect = w / h;
                 camera.updateProjectionMatrix();
                 webglRenderer.setSize(w, h);
                 cssRenderer.setSize(w, h);
+                composer.setSize(w, h);
             });
 
-            // --- 9. Запуск ---
+            lastTime = performance.now();
             animate();
-
-            // Невелика затримка для першої анімації
-            setTimeout(() => {
-                // Початковий погляд на головну панель
-                camera.lookAt(PANEL_POSITIONS[0].x, 0, PANEL_POSITIONS[0].z);
-                targetLookAt = { x: PANEL_POSITIONS[0].x, y: 0, z: PANEL_POSITIONS[0].z };
-                targetCameraPos = { ...CAMERA_BASE[0] };
-            }, 100);
-
         })();
     </script>
 </body>
