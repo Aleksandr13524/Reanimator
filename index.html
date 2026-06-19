@@ -1,644 +1,757 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="ru">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
-    <title>REANIMATOR — комп'ютерний сервіс в Одесі</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
-    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>REANIMATOR SYSTEMS · 3D HOLO</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    /* --- GLOBAL --- */
+    * { margin:0; padding:0; box-sizing:border-box; }
+    :root {
+      --g: #21d63b;
+      --g2: #6dff84;
+      --g3: #00b8ff;
+      --bg: #030704;
+      --card: rgba(8, 18, 10, 0.88);
+      --text: #e6f0e7;
+      --muted: #6b806e;
+      --line: rgba(33, 214, 59, 0.15);
+      --glow: 0 0 30px rgba(33, 214, 59, 0.3);
+    }
+    html, body { width:100%; height:100%; overflow:hidden; background:var(--bg); font-family:'Rajdhani',sans-serif; color:var(--text); }
+    #three-canvas { position:fixed; inset:0; z-index:0; }
 
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: #0a0a0a; overflow: hidden;
-            font-family: 'Share Tech Mono', monospace; color: #21d63b;
-            user-select: none; -webkit-user-select: none;
-        }
-        #webgl-container { position: fixed; top:0; left:0; width:100vw; height:100vh; z-index:0; }
-        #css-container { position: fixed; top:0; left:0; width:100vw; height:100vh; z-index:1; pointer-events: none; }
-        #hud {
-            position: fixed; top:0; left:0; width:100%; height:100%; z-index:10;
-            pointer-events: none; display:flex; flex-direction:column; justify-content:space-between;
-            padding: 20px 30px;
-        }
-        .hud-top { display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px; }
-        .hud-logo {
-            font-family: 'Rajdhani', sans-serif; font-weight:700; font-size:2.2rem;
-            letter-spacing:6px; color:#21d63b; text-shadow:0 0 15px #21d63b88, 0 0 40px #21d63b44;
-            background: rgba(0,0,0,0.55); padding:6px 18px; border:1px solid #21d63b55;
-            border-radius:4px; backdrop-filter:blur(4px);
-            pointer-events: auto; cursor: pointer;
-            transition: background 0.3s;
-        }
-        .hud-logo:hover { background: #21d63b22; }
-        .hud-status {
-            font-size:1rem; background: rgba(0,0,0,0.6); padding:6px 14px; border:1px solid #21d63b44;
-            border-radius:20px; letter-spacing:2px; backdrop-filter:blur(4px); text-shadow:0 0 8px #21d63b66;
-        }
-        .hud-ticker {
-            font-size:0.85rem; color:#21d63bcc; background: rgba(0,0,0,0.7); padding:6px 16px;
-            border-left:3px solid #21d63b; margin-top:8px; white-space:nowrap; overflow:hidden;
-            backdrop-filter:blur(4px); width:fit-content; max-width:90%; border-radius:0 12px 12px 0;
-            text-shadow:0 0 6px #21d63b44;
-        }
-        .ticker-text { display:inline-block; animation: tickerScroll 18s linear infinite; }
-        @keyframes tickerScroll {
-            0% { transform: translateX(100%); } 100% { transform: translateX(-100%); }
-        }
-        .hud-nav { display:flex; gap:12px; align-items:center; pointer-events:auto; flex-wrap:wrap; justify-content:center; margin-bottom:10px; }
-        .hud-nav button {
-            font-family: 'Share Tech Mono', monospace; font-size:1rem; font-weight:600;
-            padding:10px 22px; background: rgba(0,0,0,0.75); color:#21d63b;
-            border:1px solid #21d63b66; border-radius:6px; cursor:pointer;
-            transition: all 0.25s ease; backdrop-filter:blur(6px);
-            text-shadow:0 0 6px #21d63b44; letter-spacing:1px; touch-action:manipulation;
-        }
-        .hud-nav button:hover, .hud-nav button:active {
-            background:#21d63b22; border-color:#21d63b; box-shadow:0 0 25px #21d63b55; transform:scale(1.04);
-        }
-        .hud-bottom { display:flex; justify-content:center; pointer-events:none; flex-direction:column; align-items:center; }
-        .panel-3d {
-            width: 420px; max-width:90vw; background: rgba(10,10,10,0.85); backdrop-filter:blur(12px);
-            border:1px solid #21d63b55; border-radius:16px; padding:28px 30px; color:#d0f0d0;
-            font-family: 'Share Tech Mono', monospace; box-shadow:0 0 40px rgba(33,214,59,0.15), inset 0 0 60px rgba(33,214,59,0.05);
-            pointer-events: auto; transition: box-shadow 0.3s; overflow-y:auto; max-height:80vh;
-            touch-action:pan-y; -webkit-overflow-scrolling:touch;
-        }
-        .panel-3d h2 {
-            font-family: 'Rajdhani', sans-serif; font-weight:700; font-size:1.8rem;
-            color:#21d63b; text-shadow:0 0 20px #21d63b66; margin-bottom:14px;
-            letter-spacing:2px; border-bottom:1px solid #21d63b33; padding-bottom:8px;
-        }
-        .panel-3d p, .panel-3d li { font-size:1rem; line-height:1.6; color:#ccf0cc; }
-        .panel-3d ul { list-style:none; padding:0; }
-        .panel-3d li { padding:6px 0; border-bottom:1px solid #21d63b1a; display:flex; justify-content:space-between; gap:10px; }
-        .panel-3d .price { color:#21d63b; font-weight:700; text-shadow:0 0 8px #21d63b44; }
-        .panel-3d .highlight { color:#21d63b; font-weight:600; }
-        .panel-3d .phone { font-size:1.2rem; color:#21d63b; letter-spacing:1px; }
-        @media (max-width: 640px) {
-            .panel-3d { width:320px; padding:20px; font-size:0.9rem; }
-            .panel-3d h2 { font-size:1.4rem; }
-            .hud-logo { font-size:1.6rem; padding:4px 12px; }
-            .hud-status { font-size:0.75rem; padding:4px 10px; }
-            .hud-nav button { font-size:0.8rem; padding:6px 14px; }
-            .hud-ticker { font-size:0.7rem; padding:4px 12px; }
-        }
-        @media (max-width: 400px) {
-            .panel-3d { width:280px; padding:14px; }
-        }
-        .panel-3d::-webkit-scrollbar { width:4px; }
-        .panel-3d::-webkit-scrollbar-track { background:transparent; }
-        .panel-3d::-webkit-scrollbar-thumb { background:#21d63b66; border-radius:4px; }
-        .panel-3d * { user-select:text; -webkit-user-select:text; }
-        #gyro-permission {
-            position:fixed; bottom:100px; left:50%; transform:translateX(-50%); z-index:20;
-            pointer-events:auto; background:rgba(0,0,0,0.8); color:#21d63b; border:1px solid #21d63b;
-            padding:8px 20px; border-radius:20px; font-family:'Share Tech Mono',monospace; cursor:pointer; display:none;
-        }
-        #desktop-exit {
-            position:fixed; top:20px; right:20px; z-index:30; pointer-events:auto;
-            background:rgba(0,0,0,0.8); color:#21d63b; border:1px solid #21d63b;
-            padding:8px 18px; border-radius:20px; font-family:'Share Tech Mono',monospace; cursor:pointer;
-            display:none; backdrop-filter:blur(6px);
-        }
-    </style>
+    /* --- BOOT --- */
+    #boot-screen {
+      position:fixed; inset:0; z-index:9999; background:#000;
+      display:flex; flex-direction:column; justify-content:center; align-items:flex-start;
+      padding:40px 10vw; font-family:'Share Tech Mono',monospace;
+      transition:opacity 0.8s ease;
+    }
+    #boot-screen.hidden { opacity:0; pointer-events:none; }
+    .boot-line { font-size:clamp(11px,2vw,14px); color:#21d63b; margin-bottom:6px; opacity:0; animation:bootAppear 0s forwards; }
+    .boot-line.ok::after { content:' [OK]'; color:#6dff84; }
+    .boot-line.warn::after { content:' [WARN]'; color:#f0a500; }
+    @keyframes bootAppear { to { opacity:1; } }
+    #boot-bar-wrap { margin-top:24px; width:min(400px,80vw); }
+    #boot-bar-label { font-size:12px; color:var(--muted); margin-bottom:8px; font-family:'Share Tech Mono',monospace; }
+    #boot-bar-track { width:100%; height:4px; background:rgba(33,214,59,0.1); border-radius:2px; }
+    #boot-bar-fill { width:0%; height:100%; background:linear-gradient(90deg,var(--g),var(--g2)); border-radius:2px; box-shadow:0 0 15px var(--g); transition:width 0.1s linear; }
+
+    /* --- HUD --- */
+    #hud { position:fixed; inset:0; z-index:10; pointer-events:none; display:flex; flex-direction:column; }
+    #top-bar {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:14px 24px;
+      background:linear-gradient(180deg,rgba(3,7,4,0.97) 0%,transparent 100%);
+      pointer-events:all;
+    }
+    .logo-small { font-family:'Share Tech Mono',monospace; font-size:clamp(14px,3vw,20px); letter-spacing:2px; text-shadow:0 0 20px rgba(33,214,59,0.3); }
+    .logo-small .re { color:#fff; } .logo-small .ani { color:var(--g); } .logo-small .mator { color:var(--g2); }
+    .sys-status { font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--g); opacity:0.8; display:flex; gap:16px; }
+    .dot-live { width:7px; height:7px; border-radius:50%; background:var(--g2); display:inline-block; box-shadow:0 0 12px var(--g2); animation:pulse 1.5s infinite; margin-right:6px; }
+    @keyframes pulse { 0%,100% { opacity:0.4; transform:scale(0.9); } 50% { opacity:1; transform:scale(1.2); } }
+
+    #section-label {
+      position:fixed; top:70px; left:50%; transform:translateX(-50%);
+      font-family:'Share Tech Mono',monospace; font-size:12px; letter-spacing:4px;
+      color:var(--g3); opacity:0.7; z-index:11; text-shadow:0 0 10px rgba(0,184,255,0.3);
+      pointer-events:none; transition:opacity 0.4s;
+    }
+
+    /* BOTTOM NAV — 3D кнопки */
+    #bottom-nav {
+      margin-top:auto;
+      display:flex; justify-content:center; gap:20px;
+      padding:20px 20px calc(20px + env(safe-area-inset-bottom,0px));
+      background:linear-gradient(0deg,rgba(3,7,4,0.98) 0%,transparent 100%);
+      pointer-events:all;
+    }
+    .nav3d-btn {
+      background:none; border:none; cursor:pointer;
+      display:flex; flex-direction:column; align-items:center; gap:8px;
+      font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:2px;
+      color:var(--muted); transition:color 0.3s, transform 0.2s;
+      position:relative;
+      transform-style:preserve-3d;
+    }
+    .nav3d-btn .btn-cube {
+      width:56px; height:28px; position:relative; transform-style:preserve-3d;
+      transition:transform 0.15s ease;
+    }
+    .nav3d-btn:active .btn-cube { transform:translateY(4px) scale(0.92); }
+    .cube-face {
+      position:absolute; display:flex; align-items:center; justify-content:center;
+      font-size:20px; border:1px solid rgba(33,214,59,0.2);
+      transition:all 0.3s;
+    }
+    .cube-top {
+      width:56px; height:28px; top:0; left:0;
+      background:rgba(8,18,10,0.95); border-radius:8px 8px 0 0;
+      box-shadow:0 -2px 0 rgba(33,214,59,0.15), inset 0 1px 0 rgba(109,255,132,0.1);
+      backdrop-filter:blur(4px);
+    }
+    .cube-front {
+      width:56px; height:6px; bottom:-6px; left:0;
+      background:rgba(5,12,6,0.98); border-radius:0 0 4px 4px;
+      border-top:none; box-shadow:0 4px 12px rgba(0,0,0,0.7);
+    }
+    .nav3d-btn.active .cube-top {
+      background:rgba(33,214,59,0.15); border-color:var(--g2);
+      box-shadow:0 0 25px rgba(33,214,59,0.4), inset 0 1px 0 rgba(109,255,132,0.3);
+    }
+    .nav3d-btn.active .cube-front { background:rgba(20,60,25,0.9); border-color:var(--g); }
+    .nav3d-btn.active { color:var(--g2); text-shadow:0 0 20px rgba(109,255,132,0.4); }
+    .nav3d-btn:hover .cube-top { border-color:rgba(33,214,59,0.8); background:rgba(33,214,59,0.1); transform:scale(1.02); }
+
+    /* --- PANELS (голограммы) --- */
+    #panels-overlay {
+      position:fixed; inset:0; z-index:5;
+      display:flex; align-items:center; justify-content:center;
+      pointer-events:none; perspective:1500px;
+    }
+    .panel {
+      position:absolute; width:min(560px,92vw);
+      background:var(--card); border:1px solid var(--line); border-radius:20px;
+      padding:32px 28px; backdrop-filter:blur(20px);
+      box-shadow:0 0 80px rgba(0,0,0,0.7), 0 0 40px rgba(33,214,59,0.08);
+      transform-style:preserve-3d;
+      transition:opacity 0.6s ease, transform 0.8s cubic-bezier(0.25,0.46,0.45,0.94);
+      opacity:0; pointer-events:none; max-height:80vh; overflow-y:auto;
+      scrollbar-width:thin; scrollbar-color:var(--g) transparent;
+    }
+    .panel::-webkit-scrollbar { width:4px; }
+    .panel::-webkit-scrollbar-thumb { background:var(--g); border-radius:2px; }
+    .panel.active { opacity:1; pointer-events:all; transform:translateZ(0) rotateX(0) !important; }
+    .panel.exit-left { opacity:0; transform:translateX(-130%) rotateY(45deg) rotateX(5deg) !important; }
+    .panel.exit-right { opacity:0; transform:translateX(130%) rotateY(-45deg) rotateX(-5deg) !important; }
+    .panel.enter-left { opacity:0; transform:translateX(130%) rotateY(-45deg); }
+    .panel.enter-right { opacity:0; transform:translateX(-130%) rotateY(45deg); }
+
+    /* --- PANEL CONTENT --- */
+    .p-label { font-family:'Share Tech Mono',monospace; font-size:11px; letter-spacing:3px; color:var(--muted); margin-bottom:20px; border-left:2px solid var(--g); padding-left:10px; }
+    .p-logo { font-size:clamp(42px,10vw,80px); font-weight:700; line-height:1; margin-bottom:16px; letter-spacing:-2px; text-shadow:0 0 40px rgba(33,214,59,0.2); }
+    .p-logo .re { color:#fff; } .p-logo .ani { color:var(--g); } .p-logo .mator { color:var(--g2); }
+    .p-tagline { font-family:'Share Tech Mono',monospace; font-size:clamp(11px,2vw,14px); color:#a3bfa7; line-height:1.8; margin-bottom:14px; }
+    .p-manifesto { font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--muted); border-left:2px solid var(--g); padding-left:12px; margin-bottom:24px; line-height:1.8; }
+    .p-manifesto em { color:var(--g2); font-style:normal; }
+    .status-row { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px; }
+    .st { font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--text); display:flex; align-items:center; gap:8px; background:rgba(33,214,59,0.05); padding:5px 14px; border-radius:20px; border:1px solid var(--line); backdrop-filter:blur(4px); }
+
+    .price-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px; }
+    .pcard {
+      background:rgba(13,24,15,0.7); border:1px solid var(--line); padding:18px; border-radius:14px;
+      transition:all 0.3s; cursor:pointer; position:relative; backdrop-filter:blur(4px);
+    }
+    .pcard:hover { border-color:rgba(33,214,59,0.5); transform:translateY(-4px) scale(1.01); box-shadow:var(--glow); }
+    .pcard .label { font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:2px; color:var(--muted); margin-bottom:8px; }
+    .pcard .title { font-size:15px; font-weight:700; margin-bottom:8px; }
+    .pcard .price { font-size:28px; font-weight:700; color:var(--g2); text-shadow:0 0 20px rgba(109,255,132,0.3); }
+    .pcard .note { font-family:'Share Tech Mono',monospace; font-size:10px; color:var(--muted); margin-top:4px; }
+
+    .btn-row { display:flex; gap:12px; flex-wrap:wrap; }
+    .btn3d {
+      padding:14px 24px; border-radius:12px; font-size:14px; font-weight:700;
+      font-family:'Share Tech Mono',monospace; letter-spacing:1px;
+      cursor:pointer; border:none; flex:1; min-width:130px; text-align:center;
+      text-decoration:none; display:inline-block; position:relative; transform-style:preserve-3d;
+      transition:transform 0.15s ease, box-shadow 0.15s ease, background 0.2s;
+      backdrop-filter:blur(6px);
+    }
+    .btn3d::after {
+      content:''; position:absolute; left:0; right:0; bottom:-6px; height:6px;
+      border-radius:0 0 12px 12px; transition:height 0.15s ease, bottom 0.15s ease;
+    }
+    .btn3d:active { transform:translateY(6px) scale(0.97); box-shadow:none !important; }
+    .btn3d:active::after { height:2px; bottom:-2px; }
+    .btn-main3d {
+      background:linear-gradient(135deg,var(--g2),var(--g)); color:#030704;
+      box-shadow:0 6px 0 #0e6b1e, 0 8px 30px rgba(33,214,59,0.5);
+      text-shadow:0 0 10px rgba(0,0,0,0.2);
+    }
+    .btn-main3d::after { background:#0e6b1e; }
+    .btn-main3d:hover { transform:translateY(-3px); box-shadow:0 8px 0 #0e6b1e, 0 12px 40px rgba(33,214,59,0.6); }
+    .btn-light3d {
+      background:rgba(13,24,15,0.6); color:var(--g2); border:1px solid rgba(33,214,59,0.3);
+      box-shadow:0 5px 0 rgba(5,10,6,0.9), 0 6px 20px rgba(0,0,0,0.5);
+      backdrop-filter:blur(8px);
+    }
+    .btn-light3d::after { background:rgba(5,10,6,0.9); }
+    .btn-light3d:hover { transform:translateY(-2px); border-color:var(--g); box-shadow:0 7px 0 rgba(5,10,6,0.9), 0 8px 30px rgba(33,214,59,0.2); }
+
+    .stats-grid { display:flex; gap:20px; justify-content:center; margin-bottom:24px; flex-wrap:wrap; }
+    .stat-item { text-align:center; }
+    .stat-num { font-size:36px; font-weight:700; color:var(--g2); font-family:'Share Tech Mono',monospace; line-height:1; text-shadow:0 0 20px rgba(109,255,132,0.3); }
+    .stat-label { font-family:'Share Tech Mono',monospace; font-size:10px; color:var(--muted); letter-spacing:2px; margin-top:4px; }
+
+    .service-list { display:flex; flex-direction:column; gap:10px; margin-bottom:20px; }
+    .service {
+      background:rgba(13,24,15,0.6); border:1px solid var(--line); padding:14px 18px; border-radius:12px;
+      display:flex; justify-content:space-between; align-items:center; gap:16px;
+      transition:all 0.3s; cursor:default; position:relative; overflow:hidden; backdrop-filter:blur(4px);
+    }
+    .service::before { content:''; position:absolute; left:0; top:0; width:4px; height:0; background:var(--g2); transition:height 0.4s; box-shadow:0 0 20px var(--g2); }
+    .service:hover { border-color:rgba(33,214,59,0.4); transform:translateX(6px); }
+    .service:hover::before { height:100%; }
+    .s-name { font-size:18px; font-weight:700; margin-bottom:3px; }
+    .s-desc { font-family:'Share Tech Mono',monospace; font-size:11px; color:#8da391; }
+    .s-price { font-size:20px; font-weight:700; color:var(--g2); white-space:nowrap; text-shadow:0 0 10px rgba(109,255,132,0.2); }
+
+    .pc-card { background:rgba(13,24,15,0.7); border:1px solid var(--g); border-radius:14px; padding:20px; margin-bottom:18px; box-shadow:0 0 30px rgba(33,214,59,0.1); }
+    .pc-spec-item { font-family:'Share Tech Mono',monospace; font-size:12px; margin-bottom:6px; color:#a3bfa7; }
+    .pc-spec-item span { color:var(--g2); }
+    .log-entry { border-left:2px solid var(--line); padding-left:16px; margin-bottom:18px; position:relative; }
+    .log-entry::before { content:''; position:absolute; left:-5px; top:5px; width:8px; height:8px; background:var(--g); border-radius:50%; box-shadow:0 0 12px var(--g); }
+    .log-date { font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--muted); }
+    .log-title { font-size:18px; font-weight:700; margin:5px 0; }
+    .log-text { color:#a3bfa7; font-size:13px; line-height:1.6; }
+
+    .survey-card { background:rgba(33,214,59,0.03); border:1px solid var(--g); border-radius:14px; padding:20px; margin-bottom:18px; box-shadow:0 0 20px rgba(33,214,59,0.05); }
+    .survey-title { font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--g2); margin-bottom:12px; letter-spacing:2px; }
+    .survey-q { font-size:16px; font-weight:600; margin-bottom:14px; }
+    .survey-opts { display:flex; flex-direction:column; gap:8px; }
+    .survey-opt {
+      background:none; border:1px solid var(--line); padding:10px 14px; border-radius:10px;
+      color:var(--text); font-family:'Share Tech Mono',monospace; font-size:12px;
+      cursor:pointer; text-align:left; transition:all 0.3s; backdrop-filter:blur(2px);
+    }
+    .survey-opt:hover { border-color:var(--g); color:var(--g2); background:rgba(33,214,59,0.08); transform:translateX(4px); }
+    .survey-opt.selected { border-color:var(--g2); color:var(--g2); background:rgba(33,214,59,0.15); box-shadow:0 0 20px rgba(109,255,132,0.1); }
+
+    .p-footer { font-family:'Share Tech Mono',monospace; font-size:10px; color:var(--muted); text-align:center; margin-top:20px; padding-top:16px; border-top:1px solid var(--line); }
+
+    #ticker-wrap {
+      position:fixed; top:54px; left:0; right:0; z-index:12;
+      overflow:hidden; background:rgba(33,214,59,0.02);
+      border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+      padding:8px 0; pointer-events:none;
+    }
+    #ticker-track { display:inline-flex; animation:ticker 40s linear infinite; white-space:nowrap; }
+    .ticker-item { font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--muted); padding:0 36px; letter-spacing:1px; }
+    .ticker-item span { color:var(--g2); }
+    @keyframes ticker { from { transform:translateX(0); } to { transform:translateX(-50%); } }
+
+    #hint {
+      position:fixed; bottom:110px; left:50%; transform:translateX(-50%);
+      font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--muted);
+      z-index:13; text-align:center; pointer-events:none;
+      animation:fadeHint 5s ease 2s forwards; opacity:0; text-shadow:0 0 10px rgba(0,0,0,0.8);
+    }
+    @keyframes fadeHint { 0%{opacity:0;} 10%{opacity:0.8;} 80%{opacity:0.8;} 100%{opacity:0;} }
+  </style>
 </head>
 <body>
-    <div id="hud">
-        <div class="hud-top">
-            <div class="hud-logo" id="logo-hud">⚡ REANIMATOR</div>
-            <div class="hud-status">ОДЕСА NODE</div>
-        </div>
-        <div style="flex:1;"></div>
-        <div class="hud-ticker">
-            <span class="ticker-text">► ГАРАНТІЯ до 12 місяців • Виїзд +200 грн • Прийом 10:00–20:00</span>
-        </div>
-        <div class="hud-bottom">
-            <div class="hud-nav" id="nav-buttons">
-                <button onclick="goToPanel(0)">Головна</button>
-                <button onclick="goToPanel(1)">Послуги</button>
-                <button onclick="goToPanel(2)">Гарантія</button>
-            </div>
-        </div>
+
+<!-- BOOT -->
+<div id="boot-screen">
+  <div id="boot-lines"></div>
+  <div id="boot-bar-wrap">
+    <div id="boot-bar-label">// LOADING REANIMATOR 3D HOLO ...</div>
+    <div id="boot-bar-track"><div id="boot-bar-fill"></div></div>
+  </div>
+</div>
+
+<canvas id="three-canvas"></canvas>
+<div id="section-label">// HOME</div>
+<div id="ticker-wrap"><div id="ticker-track"></div></div>
+<div id="hint">← СВАЙП ИЛИ КНОПКИ НАВИГАЦИИ →</div>
+
+<!-- HUD -->
+<div id="hud">
+  <div id="top-bar">
+    <div class="logo-small"><span class="re">RE</span><span class="ani">ANI</span><span class="mator">MATOR</span></div>
+    <div class="sys-status">
+      <span><span class="dot-live"></span>ОДЕССА NODE</span>
+      <span style="display:none" id="status-extra"><span class="dot-live"></span>ГАРАНТИЯ АКТИВНА</span>
     </div>
+  </div>
+  <div id="bottom-nav">
+    <button class="nav3d-btn active" data-panel="0" onclick="goPanel(0)">
+      <div class="btn-cube"><div class="cube-face cube-top">🏠</div><div class="cube-face cube-front"></div></div>
+      ГЛАВНАЯ
+    </button>
+    <button class="nav3d-btn" data-panel="1" onclick="goPanel(1)">
+      <div class="btn-cube"><div class="cube-face cube-top">⚡</div><div class="cube-face cube-front"></div></div>
+      УСЛУГИ
+    </button>
+    <button class="nav3d-btn" data-panel="2" onclick="goPanel(2)">
+      <div class="btn-cube"><div class="cube-face cube-top">🏥</div><div class="cube-face cube-front"></div></div>
+      МОЙ ПК
+    </button>
+  </div>
+</div>
 
-    <div id="webgl-container"></div>
-    <div id="css-container"></div>
-    <button id="gyro-permission">📱 Дозволити рух</button>
-    <button id="desktop-exit">✕ Вийти з режиму стола</button>
+<!-- PANELS -->
+<div id="panels-overlay">
+  <!-- PANEL 0 -->
+  <div class="panel active enter-left" id="panel-0">
+    <div class="p-label">// SYSTEM RECOVERY UNIT // NODE ODESSA</div>
+    <div class="p-logo"><span class="re">RE</span><span class="ani">ANI</span><span class="mator">MATOR</span></div>
+    <div class="p-tagline">Компьютерная помощь в Одессе — честно, быстро, с гарантией.</div>
+    <div class="p-manifesto">
+      // ПРИНЦИП:<br>
+      <em>«Кремний не прощает ошибок. Мы не делаем допущений.»</em><br>
+      Реанимация вместо утилизации.
+    </div>
+    <div class="status-row">
+      <div class="st"><span class="dot-live"></span>ПРИЁМ ПАЦИЕНТОВ</div>
+      <div class="st"><span class="dot-live"></span>ГАРАНТИЯ АКТИВНА</div>
+    </div>
+    <div class="price-grid">
+      <div class="pcard">
+        <div class="label">// ТО СИСТЕМЫ</div>
+        <div class="title">Чистка ноута / ПК</div>
+        <div class="price"><span class="count-num" data-target="1000">0</span> <small style="font-size:14px;color:var(--text)">грн</small></div>
+        <div class="note">замена термопасты · продувка</div>
+      </div>
+      <div class="pcard">
+        <div class="label">// ИНСТАЛЛЯЦИЯ ОС</div>
+        <div class="title">Windows / Linux</div>
+        <div class="price"><span class="count-num" data-target="1000">0</span> <small style="font-size:14px;color:var(--text)">грн</small></div>
+        <div class="note">оптимизация · драйверы</div>
+      </div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-item"><div class="stat-num count-num" data-target="847">0</div><div class="stat-label">ПАЦИЕНТОВ</div></div>
+      <div class="stat-item"><div class="stat-num count-num" data-target="12">0</div><div class="stat-label">ЛЕТ В ДЕЛЕ</div></div>
+      <div class="stat-item"><div class="stat-num count-num" data-target="98">0</div><div class="stat-label">% ДОВОЛЕН</div></div>
+    </div>
+    <div class="btn-row">
+      <a class="btn3d btn-main3d" href="tel:+380000000000">📞 ПОЗВОНИТЬ</a>
+      <button class="btn3d btn-light3d" onclick="goPanel(2)">МОЙ ПК →</button>
+    </div>
+    <div class="p-footer">REANIMATOR · ODESSA NODE · SINCE 2014</div>
+  </div>
 
-    <!-- Бібліотеки -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FontLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/TextGeometry.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/renderers/CSS3DRenderer.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <!-- PANEL 1 -->
+  <div class="panel enter-right" id="panel-1">
+    <div class="p-label">// ДОСТУПНЫЕ ОПЕРАЦИИ</div>
+    <div class="service-list">
+      <div class="service"><div><div class="s-name">Настройка Smart TV</div><div class="s-desc">IPTV, стриминги, Android TV конфиг</div></div><div class="s-price">600 грн</div></div>
+      <div class="service"><div><div class="s-name">Удаление вирусов</div><div class="s-desc">Полная зачистка, AnyDesk-контроль</div></div><div class="s-price">500 грн</div></div>
+      <div class="service"><div><div class="s-name">Апгрейд железа</div><div class="s-desc">SSD, RAM, термопаста — подбор и установка</div></div><div class="s-price">от 300 грн</div></div>
+      <div class="service"><div><div class="s-name">Выезд на дом</div><div class="s-desc">Диагностика и ремонт без очереди у вас</div></div><div class="s-price">+200 грн</div></div>
+      <div class="service"><div><div class="s-name">Чистка ноута / ПК</div><div class="s-desc">Замена термоинтерфейса · продувка</div></div><div class="s-price">1000 грн</div></div>
+      <div class="service"><div><div class="s-name">Установка ОС</div><div class="s-desc">Windows / Linux · оптимизация · драйверы</div></div><div class="s-price">1000 грн</div></div>
+    </div>
+    <div class="btn-row"><a class="btn3d btn-main3d" href="tel:+380000000000">📞 ЗАПИСАТЬСЯ</a></div>
+    <div class="p-footer">Гарантия на все работы — до 12 месяцев</div>
+  </div>
 
-    <script>
-        (function() {
-            'use strict';
+  <!-- PANEL 2 -->
+  <div class="panel enter-right" id="panel-2">
+    <div class="p-label">// ЦИФРОВОЙ ПАСПОРТ ПАЦИЕНТА</div>
+    <div class="survey-card" id="survey-block">
+      <div class="survey-title">// ПЛАНОВЫЙ ОПРОС · ТАЙМЕР: 30 дней</div>
+      <div class="survey-q">Как ваш компьютер чувствует себя?</div>
+      <div class="survey-opts" id="survey-opts">
+        <button class="survey-opt" onclick="selectSurvey(this,5)">🟢 Отлично — летает</button>
+        <button class="survey-opt" onclick="selectSurvey(this,3)">🟡 Нормально — иногда тормозит</button>
+        <button class="survey-opt" onclick="selectSurvey(this,2)">🟠 Хуже — греется / шумит</button>
+        <button class="survey-opt" onclick="selectSurvey(this,1)">🔴 Плохо — нужна помощь</button>
+      </div>
+      <button class="btn3d btn-main3d" id="survey-send" style="display:none;margin-top:12px;width:100%" onclick="sendSurvey()">ОТПРАВИТЬ МАСТЕРУ</button>
+      <div id="survey-sent" style="display:none;font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--g2);padding:10px 0;">✅ Отчёт отправлен. Мастер получил уведомление.</div>
+    </div>
+    <div class="pc-card">
+      <div class="p-label" style="color:var(--g2);">[ АППАРАТНЫЙ УЗЕЛ НА УЧЁТЕ ]</div>
+      <div style="font-size:20px;font-weight:700;margin-bottom:12px;">Рабочая станция Alexander-Custom</div>
+      <div class="pc-spec-item">Процессор: <span>Intel Core i5 LGA 1151</span></div>
+      <div class="pc-spec-item">Материнка: <span>MSI H110M</span></div>
+      <div class="pc-spec-item">Накопитель: <span>SSD Kingston 480GB</span></div>
+      <div class="pc-spec-item">Следующее ТО: <span>Декабрь 2026</span></div>
+      <div class="pc-spec-item">Гарантия: <span style="color:var(--g2);">🟢 АКТИВНА ДО 17.06.2027</span></div>
+    </div>
+    <div class="p-label" style="margin-bottom:14px;">// ИСТОРИЯ ОБРАЩЕНИЙ</div>
+    <div class="log-entry">
+      <div class="log-date">17.06.2026 — СЕССИЯ #1024</div>
+      <div class="log-title">Комплексная Реанимация и Апгрейд</div>
+      <div class="log-text">Чистка компрессором, замена термоинтерфейса Arctic MX-4. Установлен SSD Kingston взамен HDD. Перенос и оптимизация Windows 10 Pro.</div>
+      <div class="log-date" style="margin-top:5px;color:var(--g2);">Стоимость: 2500 грн | Гарантия: 12 мес</div>
+    </div>
+    <div class="log-entry" style="opacity:0.6;">
+      <div class="log-date">12.11.2025 — СЕССИЯ #0842</div>
+      <div class="log-title">Чистка вирусов</div>
+      <div class="log-text">Удаление вредоносного ПО, настройка AnyDesk.</div>
+      <div class="log-date" style="margin-top:5px;">Стоимость: 500 грн | <span style="color:#f05050;">Гарантия истекла</span></div>
+    </div>
+  </div>
+</div>
 
-            // ---------- ГЛОБАЛЬНИЙ СТАН ----------
-            const RAIN_WIDTH = 18, RAIN_HEIGHT = 12;
-            const PANEL_POS = [ {x:0, z:-6}, {x:7, z:-5.5}, {x:-7, z:-5.5} ];
-            const CAM_BASE = [ {x:0, y:0.8, z:2.5}, {x:7, y:0.8, z:2.5}, {x:-7, y:0.8, z:2.5} ];
+<script>
+// ============================================================
+//  THREE.JS — ОПТИМИЗИРОВАННЫЙ
+// ============================================================
+const canvas = document.getElementById('three-canvas');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
 
-            let currentPanel = 0;
-            let targetCamPos = { ...CAM_BASE[0] };
-            let targetLookAt = { x:0, y:0, z:-6 };
-            let isAnimating = false;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 2000);
+camera.position.set(0, 0, 18);
 
-            let gyroOffsetX = 0, gyroOffsetY = 0;
-            const GYRO_MAX = 1.2;
-            let gyroEnabled = false;
+// --- LIGHTS ---
+scene.add(new THREE.AmbientLight(0x0a1a0c, 0.6));
+const pLight1 = new THREE.PointLight(0x21d63b, 2.5, 80);
+pLight1.position.set(0, 10, 10);
+scene.add(pLight1);
+const pLight2 = new THREE.PointLight(0x6dff84, 1.2, 60);
+pLight2.position.set(-10, -5, 5);
+scene.add(pLight2);
+const pLight3 = new THREE.PointLight(0x00b8ff, 1.5, 70);
+pLight3.position.set(10, -2, 15);
+scene.add(pLight3);
 
-            let desktopMode = false;
-            let draggedObject = null;
-            let dragOffset = new THREE.Vector3();
-            const desktopObjects = [];
+// --- GRID ---
+const gridHelper = new THREE.GridHelper(100, 50, 0x21d63b, 0x0d240f);
+gridHelper.position.y = -12;
+gridHelper.material.opacity = 0.25;
+gridHelper.material.transparent = true;
+scene.add(gridHelper);
 
-            // ---------- СЦЕНА, РЕНДЕРЕРИ, КАМЕРА ----------
-            const webglScene = new THREE.Scene();
-            webglScene.background = new THREE.Color(0x0a0a0a);
-            webglScene.fog = new THREE.FogExp2(0x0a0a0a, 0.03);
+// --- ГОЛОГРАФИЧЕСКИЕ КОЛЬЦА ---
+const ringGroup = new THREE.Group();
+scene.add(ringGroup);
+const ringMat = new THREE.MeshBasicMaterial({color:0x21d63b, transparent:true, opacity:0.2, wireframe:true});
+for (let i=0; i<3; i++) {
+  const radius = 3 + i*2;
+  const geo = new THREE.TorusGeometry(radius, 0.02, 16, 80);
+  const mesh = new THREE.Mesh(geo, ringMat.clone());
+  mesh.rotation.x = Math.PI/2;
+  mesh.rotation.z = i*0.5;
+  mesh.position.y = -2 + i*1.5;
+  mesh.userData.speed = 0.2 + i*0.1;
+  ringGroup.add(mesh);
+}
 
-            const cssScene = new THREE.Scene();
+// --- ВОКСЕЛИ ---
+const voxelGroup = new THREE.Group();
+scene.add(voxelGroup);
+const voxMat = new THREE.MeshLambertMaterial({color:0x21d63b, transparent:true, opacity:0.15});
+const voxMatBright = new THREE.MeshLambertMaterial({color:0x6dff84, transparent:true, opacity:0.3});
+const voxMatBlue = new THREE.MeshLambertMaterial({color:0x00b8ff, transparent:true, opacity:0.2});
+for (let i=0; i<80; i++) {
+  const s = 0.2 + Math.random()*0.8;
+  const geo = new THREE.BoxGeometry(s,s,s);
+  let mat;
+  const r = Math.random();
+  if (r<0.2) mat = voxMatBright.clone();
+  else if (r<0.4) mat = voxMatBlue.clone();
+  else mat = voxMat.clone();
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set((Math.random()-0.5)*60, (Math.random()-0.5)*30, (Math.random()-0.5)*25 - 5);
+  mesh.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, Math.random()*Math.PI);
+  mesh.userData.rotSpeed = {x:(Math.random()-0.5)*0.01, y:(Math.random()-0.5)*0.015};
+  mesh.userData.floatOffset = Math.random()*Math.PI*2;
+  mesh.userData.floatSpeed = 0.3 + Math.random()*0.6;
+  voxelGroup.add(mesh);
+}
 
-            const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
-            camera.position.set(0, 0.8, 2.5);
-            camera.lookAt(0, 0, -6);
+// ============================================================
+//  MATRIX RAIN — ОПТИМИЗИРОВАННЫЙ (АТЛАС ТЕКСТУР)
+// ============================================================
+const matrixGroup = new THREE.Group();
+scene.add(matrixGroup);
+const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZアイウエオカキクケコサシスセソタチツテトナニヌネノ';
 
-            const webglRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
-            webglRenderer.setSize(window.innerWidth, window.innerHeight);
-            webglRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            webglRenderer.shadowMap.enabled = true;
-            webglRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            document.getElementById('webgl-container').appendChild(webglRenderer.domElement);
+// Создаём атлас 8x8 (64 символа)
+const atlasSize = 8;
+const charSize = 64; // пикселей на символ
+const atlasCanvas = document.createElement('canvas');
+atlasCanvas.width = atlasSize * charSize;
+atlasCanvas.height = atlasSize * charSize;
+const ctx = atlasCanvas.getContext('2d');
+ctx.fillStyle = 'transparent';
+ctx.fillRect(0, 0, atlasCanvas.width, atlasCanvas.height);
+for (let i=0; i<chars.length; i++) {
+  const row = Math.floor(i / atlasSize);
+  const col = i % atlasSize;
+  const x = col * charSize;
+  const y = row * charSize;
+  // Рисуем символ
+  ctx.fillStyle = '#21d63b';
+  ctx.font = 'bold 48px "Share Tech Mono", monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(chars[i], x + charSize/2, y + charSize/2);
+}
+const atlasTexture = new THREE.CanvasTexture(atlasCanvas);
+atlasTexture.needsUpdate = true;
 
-            const cssRenderer = new THREE.CSS3DRenderer();
-            cssRenderer.setSize(window.innerWidth, window.innerHeight);
-            cssRenderer.domElement.style.position = 'absolute';
-            cssRenderer.domElement.style.top = '0';
-            cssRenderer.domElement.style.left = '0';
-            cssRenderer.domElement.style.pointerEvents = 'none';
-            document.getElementById('css-container').appendChild(cssRenderer.domElement);
+// Создаём колонны
+const matrixRains = [];
+const NUM_COLUMNS = 40;
+for (let col=0; col<NUM_COLUMNS; col++) {
+  const x = (Math.random()-0.5)*70;
+  const z = -5 - Math.random()*35;
+  const speed = 0.06 + Math.random()*0.22;
+  const drops = [];
+  const count = 5 + Math.floor(Math.random()*10);
+  for (let r=0; r<count; r++) {
+    const bright = r === 0;
+    const idx = Math.floor(Math.random()*chars.length);
+    // Используем атлас: вычисляем UV смещение
+    const row = Math.floor(idx / atlasSize);
+    const col = idx % atlasSize;
+    const u = col / atlasSize;
+    const v = row / atlasSize;
+    const tex = atlasTexture.clone(); // клонируем, чтобы менять offset
+    tex.offset.set(u, v);
+    tex.repeat.set(1/atlasSize, 1/atlasSize);
+    const mat = new THREE.SpriteMaterial({map:tex, transparent:true, opacity: bright ? 0.95 : 0.2 - r*0.02});
+    const sprite = new THREE.Sprite(mat);
+    const size = 0.5 + Math.random()*0.6;
+    sprite.scale.set(size,size,1);
+    sprite.position.set(x, 16 - r*1.2, z);
+    matrixGroup.add(sprite);
+    drops.push({
+      sprite,
+      offsetY: r*1.2,
+      charTimer: Math.random()*40,
+      row, col, // для быстрой смены
+      atlasSize
+    });
+  }
+  matrixRains.push({x, z, speed, y:16, drops, resetY: -18 - Math.random()*8});
+}
 
-            const renderScene = new RenderPass(webglScene, camera);
-            const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
-            bloomPass.threshold = 0.2;
-            bloomPass.strength = 1.2;
-            bloomPass.radius = 0.5;
-            const composer = new EffectComposer(webglRenderer);
-            composer.addPass(renderScene);
-            composer.addPass(bloomPass);
+// Функция смены символа у капли (без создания новых текстур)
+function changeDropChar(drop) {
+  const idx = Math.floor(Math.random()*chars.length);
+  const row = Math.floor(idx / drop.atlasSize);
+  const col = idx % drop.atlasSize;
+  const u = col / drop.atlasSize;
+  const v = row / drop.atlasSize;
+  drop.sprite.material.map.offset.set(u, v);
+  drop.sprite.material.map.needsUpdate = true;
+  drop.charTimer = 6 + Math.random()*25;
+}
 
-            // Освітлення
-            webglScene.add(new THREE.AmbientLight(0x404060, 0.5));
-            const dirLight = new THREE.DirectionalLight(0x88ffaa, 0.7);
-            dirLight.position.set(2, 5, 4);
-            dirLight.castShadow = true;
-            dirLight.shadow.mapSize.set(1024, 1024);
-            dirLight.shadow.camera.near = 0.5;
-            dirLight.shadow.camera.far = 30;
-            dirLight.shadow.camera.left = -10;
-            dirLight.shadow.camera.right = 10;
-            dirLight.shadow.camera.top = 10;
-            dirLight.shadow.camera.bottom = -10;
-            webglScene.add(dirLight);
-            webglScene.add(new THREE.DirectionalLight(0x21d63b, 0.4).translateX(-2).translateY(1).translateZ(-6));
-            const pointLight = new THREE.PointLight(0x21d63b, 0.6, 15);
-            pointLight.position.set(0, 3, -4);
-            webglScene.add(pointLight);
+// ============================================================
+//  КАМЕРА И ПАРАЛЛАКС (с requestAnimationFrame)
+// ============================================================
+let camTargetX = 0, camTargetY = 0;
+let camCurrentX = 0, camCurrentY = 0;
+let currentPanel = 0;
+let camTargetZ = 18;
+let camCurrentZ = 18;
+const panelCamZ = [18, 16, 20];
 
-            // ---------- АТЛАС СИМВОЛІВ (8x8) ----------
-            const SYMBOLS = ['ｱ','ｲ','ｳ','ｴ','ｵ','0','1','2','3','4','5','6','7','8','9','ﾘ','ﾇ','ﾏ','+','-','*','/','#','&'];
-            const atlasCanvas = document.createElement('canvas');
-            atlasCanvas.width = 512;
-            atlasCanvas.height = 512;
-            const atlasCtx = atlasCanvas.getContext('2d');
-            const ATLAS_COLS = 8, ATLAS_ROWS = 8, CELL_SIZE = 64;
-            for (let i = 0; i < SYMBOLS.length; i++) {
-                const col = i % ATLAS_COLS;
-                const row = Math.floor(i / ATLAS_COLS);
-                const x = col * CELL_SIZE, y = row * CELL_SIZE;
-                atlasCtx.fillStyle = '#ffffff';
-                atlasCtx.font = 'bold 48px "Share Tech Mono", monospace';
-                atlasCtx.textAlign = 'center';
-                atlasCtx.textBaseline = 'middle';
-                atlasCtx.fillText(SYMBOLS[i], x + CELL_SIZE/2, y + CELL_SIZE/2);
-            }
-            const atlasTexture = new THREE.CanvasTexture(atlasCanvas);
-            atlasTexture.minFilter = THREE.LinearFilter;
-            atlasTexture.magFilter = THREE.LinearFilter;
+document.addEventListener('mousemove', e=>{
+  camTargetX = (e.clientX/window.innerWidth - 0.5) * 4;
+  camTargetY = -(e.clientY/window.innerHeight - 0.5) * 2;
+});
 
-            // ---------- МАТРИЧНИЙ ДОЩ (GPU-версія) ----------
-            const COLUMNS = 65, DROPS_PER_COL = 14;
-            const TOTAL_DROPS = COLUMNS * DROPS_PER_COL;
-            const colWidth = RAIN_WIDTH / COLUMNS;
+let touchStartX = 0;
+document.addEventListener('touchstart', e=>{ touchStartX = e.touches[0].clientX; }, {passive:true});
+document.addEventListener('touchend', e=>{
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if (Math.abs(dx) > 50) {
+    dx < 0 ? goPanel(Math.min(2, currentPanel+1)) : goPanel(Math.max(0, currentPanel-1));
+  }
+}, {passive:true});
 
-            // Атрибути для шейдера
-            const startYArr = new Float32Array(TOTAL_DROPS);
-            const speedArr = new Float32Array(TOTAL_DROPS);
-            const symbolIndexArr = new Float32Array(TOTAL_DROPS);
-            const baseXArr = new Float32Array(TOTAL_DROPS);
+// ============================================================
+//  АНИМАЦИЯ (синхронизирована)
+// ============================================================
+const clock = new THREE.Clock();
+function animate() {
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
 
-            for (let c = 0, idx = 0; c < COLUMNS; c++) {
-                const cx = -RAIN_WIDTH/2 + c * colWidth + colWidth/2 + (Math.random() - 0.5) * colWidth * 0.6;
-                for (let d = 0; d < DROPS_PER_COL; d++) {
-                    baseXArr[idx] = cx;
-                    startYArr[idx] = (Math.random() * 2 - 1) * RAIN_HEIGHT;
-                    speedArr[idx] = 0.8 + Math.random() * 2.0;
-                    symbolIndexArr[idx] = Math.floor(Math.random() * SYMBOLS.length);
-                    idx++;
-                }
-            }
+  // Кольца
+  ringGroup.children.forEach((mesh, i) => {
+    mesh.rotation.z += 0.005 * (i+1);
+    mesh.position.y = -2 + i*1.5 + Math.sin(t*0.5 + i) * 0.5;
+  });
 
-            const geometry = new THREE.BufferGeometry();
-            geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(TOTAL_DROPS * 3), 3));
-            geometry.setAttribute('startY', new THREE.BufferAttribute(startYArr, 1));
-            geometry.setAttribute('speed', new THREE.BufferAttribute(speedArr, 1));
-            geometry.setAttribute('symbolIndex', new THREE.BufferAttribute(symbolIndexArr, 1));
-            geometry.setAttribute('baseX', new THREE.BufferAttribute(baseXArr, 1));
+  // Воксели
+  voxelGroup.children.forEach(m=>{
+    m.rotation.x += m.userData.rotSpeed.x;
+    m.rotation.y += m.userData.rotSpeed.y;
+    m.position.y += Math.sin(t * m.userData.floatSpeed + m.userData.floatOffset) * 0.005;
+  });
 
-            const uniforms = {
-                uTime: { value: 0 },
-                uAtlas: { value: atlasTexture },
-                uRainHeight: { value: RAIN_HEIGHT },
-                uAtlasCols: { value: ATLAS_COLS },
-                uAtlasRows: { value: ATLAS_ROWS }
-            };
+  // Матричный дождь
+  matrixRains.forEach(rain=>{
+    rain.y -= rain.speed * 0.07;
+    if (rain.y < rain.resetY) rain.y = 18 + Math.random()*6;
+    rain.drops.forEach((d, i)=>{
+      d.sprite.position.y = rain.y - d.offsetY;
+      d.charTimer--;
+      if (d.charTimer <= 0) {
+        changeDropChar(d);
+      }
+    });
+  });
 
-            const vertexShader = `
-                attribute float startY;
-                attribute float speed;
-                attribute float symbolIndex;
-                attribute float baseX;
-                varying float vSymbolIndex;
-                varying float vAlpha;
-                uniform float uTime;
-                uniform float uRainHeight;
-                void main() {
-                    float halfH = uRainHeight / 2.0;
-                    float y = mod(startY - speed * uTime + halfH, uRainHeight) - halfH;
-                    vec3 pos = vec3(baseX, y, -4.0 + fract(symbolIndex * 0.73) * 3.0 - 1.5);
-                    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-                    gl_PointSize = 16.0;
-                    vSymbolIndex = symbolIndex;
-                    vAlpha = 1.0 - abs(y) / halfH * 0.5;
-                }
-            `;
+  // Пульсации
+  gridHelper.material.opacity = 0.2 + Math.sin(t*0.6)*0.08;
+  pLight1.intensity = 2 + Math.sin(t*1.1)*0.5;
 
-            const fragmentShader = `
-                varying float vSymbolIndex;
-                varying float vAlpha;
-                uniform sampler2D uAtlas;
-                uniform float uAtlasCols;
-                uniform float uAtlasRows;
-                void main() {
-                    float cols = uAtlasCols;
-                    float rows = uAtlasRows;
-                    float idx = floor(vSymbolIndex);
-                    float col = mod(idx, cols);
-                    float row = floor(idx / cols);
-                    // Використовуємо gl_PointCoord для вибірки потрібної частини атласу
-                    vec2 uv = vec2(
-                        (col + gl_PointCoord.x) / cols,
-                        (row + (1.0 - gl_PointCoord.y)) / rows
-                    );
-                    vec4 texColor = texture2D(uAtlas, uv);
-                    gl_FragColor = vec4(0.2, 0.9, 0.3, texColor.a * vAlpha);
-                }
-            `;
+  // Камера (плавное следование)
+  camCurrentX += (camTargetX - camCurrentX) * 0.04;
+  camCurrentY += (camTargetY - camCurrentY) * 0.04;
+  camCurrentZ += (camTargetZ - camCurrentZ) * 0.05;
+  camera.position.x = camCurrentX;
+  camera.position.y = camCurrentY;
+  camera.position.z = camCurrentZ;
+  camera.lookAt(0, 0, 0);
 
-            const shaderMaterial = new THREE.ShaderMaterial({
-                uniforms: uniforms,
-                vertexShader: vertexShader,
-                fragmentShader: fragmentShader,
-                blending: THREE.AdditiveBlending,
-                depthWrite: false,
-                transparent: true
-            });
+  renderer.render(scene, camera);
+}
+animate();
 
-            const rainPoints = new THREE.Points(geometry, shaderMaterial);
-            webglScene.add(rainPoints);
+window.addEventListener('resize', ()=>{
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
 
-            // Періодична зміна символів (кожні 200 мс змінюємо кожну 10-ту каплю)
-            setInterval(() => {
-                const arr = geometry.attributes.symbolIndex.array;
-                for (let i = 0; i < TOTAL_DROPS; i += 10) {
-                    arr[i] = Math.floor(Math.random() * SYMBOLS.length);
-                }
-                geometry.attributes.symbolIndex.needsUpdate = true;
-            }, 200);
+// ============================================================
+//  PANEL NAVIGATION — с защитой от спама
+// ============================================================
+const panels = document.querySelectorAll('.panel');
+const navBtns = document.querySelectorAll('.nav3d-btn');
+const sectionLabels = ['// HOME', '// SERVICES', '// MY PC'];
+let isAnimating = false;
+let panelTimeout = null;
 
-            // ---------- ПРОЦЕДУРНА ПЛАТА ----------
-            const boardCanvas = document.createElement('canvas');
-            boardCanvas.width = 1024; boardCanvas.height = 1024;
-            const boardCtx = boardCanvas.getContext('2d');
-            const boardTexture = new THREE.CanvasTexture(boardCanvas);
-            const boardPlane = new THREE.Mesh(
-                new THREE.PlaneGeometry(20, 20),
-                new THREE.MeshBasicMaterial({ map: boardTexture, transparent: true, opacity: 0.25, depthWrite: false, blending: THREE.AdditiveBlending })
-            );
-            boardPlane.rotation.x = -Math.PI / 2;
-            boardPlane.position.y = -0.49;
-            webglScene.add(boardPlane);
+function goPanel(idx) {
+  if (idx === currentPanel || isAnimating) return;
+  isAnimating = true;
+  if (panelTimeout) clearTimeout(panelTimeout);
 
-            function drawCircuitBoard() {
-                boardCtx.clearRect(0, 0, 1024, 1024);
-                boardCtx.strokeStyle = '#21d63b';
-                boardCtx.lineWidth = 2;
-                for (let i = 0; i < 30; i++) {
-                    const x = Math.random() * 1024, y = Math.random() * 1024;
-                    boardCtx.beginPath();
-                    boardCtx.moveTo(x, y);
-                    boardCtx.lineTo(x + (Math.random() - 0.5) * 300, y + (Math.random() - 0.5) * 300);
-                    boardCtx.stroke();
-                }
-                for (let i = 0; i < 60; i++) {
-                    boardCtx.beginPath();
-                    boardCtx.arc(Math.random() * 1024, Math.random() * 1024, 5 + Math.random() * 12, 0, Math.PI * 2);
-                    boardCtx.stroke();
-                }
-                boardTexture.needsUpdate = true;
-            }
-            drawCircuitBoard();
-            let boardTimer = 0;
+  const prev = currentPanel;
+  currentPanel = idx;
 
-            // Декоративна сітка та кільце
-            const gridHelper = new THREE.GridHelper(20, 20, 0x21d63b, 0x11441a);
-            gridHelper.position.y = -0.5;
-            webglScene.add(gridHelper);
+  panels[prev].classList.remove('active');
+  panels[prev].classList.add(idx > prev ? 'exit-left' : 'exit-right');
 
-            const ring = new THREE.Mesh(
-                new THREE.TorusGeometry(8, 0.02, 16, 100),
-                new THREE.MeshStandardMaterial({ color: 0x21d63b, emissive: 0x21d63b, emissiveIntensity: 0.8, roughness: 0.3, metalness: 0.1 })
-            );
-            ring.position.set(0, -0.1, -5);
-            ring.rotation.x = Math.PI / 2;
-            webglScene.add(ring);
+  panels[idx].classList.remove('enter-left','enter-right','exit-left','exit-right');
+  panels[idx].classList.add(idx > prev ? 'enter-right' : 'enter-left');
 
-            const particleRing = (() => {
-                const count = 200;
-                const pos = new Float32Array(count * 3), col = new Float32Array(count * 3);
-                for (let i = 0; i < count; i++) {
-                    const ang = (i / count) * Math.PI * 2;
-                    const r = 2.5 + Math.random() * 0.8;
-                    pos[i*3] = Math.cos(ang) * r;
-                    pos[i*3+1] = 1.2 + Math.sin(i * 5) * 0.5;
-                    pos[i*3+2] = -3.5 + Math.sin(ang * 2) * 1.5;
-                    col[i*3] = 0.1 + Math.random() * 0.4;
-                    col[i*3+1] = 0.7 + Math.random() * 0.3;
-                    col[i*3+2] = 0.2 + Math.random() * 0.3;
-                }
-                const g = new THREE.BufferGeometry();
-                g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-                g.setAttribute('color', new THREE.BufferAttribute(col, 3));
-                const pts = new THREE.Points(g, new THREE.PointsMaterial({ size: 0.06, blending: THREE.AdditiveBlending, depthWrite: false, vertexColors: true, transparent: true, opacity: 0.8 }));
-                webglScene.add(pts);
-                return pts;
-            })();
+  // Принудительный рефлоу не нужен — используем offsetWidth для активации
+  void panels[idx].offsetWidth;
 
-            // ---------- 3D-ЛОГОТИП (завантаження з CDN; для продакшена замінити на base64) ----------
-            let logoMesh;
-            const fontLoader = new THREE.FontLoader();
-            fontLoader.load('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/fonts/helvetiker_regular.typeface.json',
-                (font) => {
-                    const textGeo = new THREE.TextGeometry('REANIMATOR', {
-                        font, size: 0.7, height: 0.25, curveSegments: 6,
-                        bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.02, bevelSegments: 3
-                    });
-                    textGeo.computeBoundingBox();
-                    const cx = (textGeo.boundingBox.max.x + textGeo.boundingBox.min.x) / 2;
-                    const cy = (textGeo.boundingBox.max.y + textGeo.boundingBox.min.y) / 2;
-                    const cz = (textGeo.boundingBox.max.z + textGeo.boundingBox.min.z) / 2;
-                    const mesh = new THREE.Mesh(textGeo, new THREE.MeshStandardMaterial({
-                        color: 0x21d63b, emissive: 0x114411, emissiveIntensity: 0.5,
-                        metalness: 0.25, roughness: 0.4, transparent: true, opacity: 0.95
-                    }));
-                    mesh.position.set(-cx, 1.2 - cy, -3.2 - cz);
-                    mesh.castShadow = true;
-                    mesh.receiveShadow = true;
-                    webglScene.add(mesh);
-                    logoMesh = mesh;
+  panels[idx].classList.add('active');
+  panels[idx].classList.remove('enter-left','enter-right');
 
-                    const gl = new THREE.PointLight(0x21d63b, 0.5, 7);
-                    gl.position.copy(mesh.position).add(new THREE.Vector3(0, 0.5, 0));
-                    webglScene.add(gl);
-                },
-                undefined,
-                (err) => console.warn('Шрифт не завантажено:', err)
-            );
+  panelTimeout = setTimeout(() => {
+    panels[prev].classList.remove('exit-left','exit-right');
+    isAnimating = false;
+    panelTimeout = null;
+  }, 800);
 
-            // ---------- CSS3D ПАНЕЛІ ----------
-            const panelObjects = [];
-            function createPanelHTML(idx) {
-                const div = document.createElement('div');
-                div.className = 'panel-3d';
-                if (idx === 0) div.innerHTML = `<h2>⚡ REANIMATOR</h2><p style="font-size:0.95rem;color:#aaa;">Комп'ютерний сервіс в Одесі</p><p style="margin-top:12px;"><span class="highlight">📞</span> <span class="phone">+380 66 7000 533</span><br><span class="highlight">📞</span> <span class="phone">+380 63 7000 533</span></p><p><span class="highlight">⏰</span> Прийом: 10:00 – 20:00</p><p><span class="highlight">👨‍🔧</span> Майстер: Олександр Олександрович</p><p style="margin-top:8px; font-size:0.9rem; color:#888;">Гарантія до 12 місяців</p>`;
-                else if (idx === 1) div.innerHTML = `<h2>🛠 ПОСЛУГИ</h2><ul><li><span>Чистка ноутбука / ПК</span> <span class="price">1000 грн</span></li><li><span>Встановлення Windows / Linux</span> <span class="price">1000 грн</span></li><li><span>Smart TV (налаштування)</span> <span class="price">600 грн</span></li><li><span>Видалення вірусів</span> <span class="price">500 грн</span></li><li><span>Апгрейд (від)</span> <span class="price">від 300 грн</span></li><li><span>Виїзд майстра</span> <span class="price">+200 грн</span></li></ul><p style="margin-top:10px; font-size:0.9rem; color:#888;">Гарантія на роботи до 12 місяців</p>`;
-                else div.innerHTML = `<h2>🛡 ГАРАНТІЯ</h2><p style="font-size:1.1rem;">Ми надаємо <span class="highlight">гарантію до 12 місяців</span> на всі види робіт!</p><ul style="margin-top:12px;"><li><span>🔧 Чистка та профілактика</span> <span class="price">6 міс.</span></li><li><span>💻 Встановлення ОС</span> <span class="price">6 міс.</span></li><li><span>🛡 Видалення вірусів</span> <span class="price">3 міс.</span></li><li><span>⚡ Апгрейд комплектуючих</span> <span class="price">12 міс.</span></li></ul><p style="margin-top:12px; color:#888;">Деталі уточнюйте у майстра.</p>`;
-                return div;
-            }
-            for (let i = 0; i < 3; i++) {
-                const obj = new THREE.CSS3DObject(createPanelHTML(i));
-                obj.position.set(PANEL_POS[i].x, 0.2, PANEL_POS[i].z);
-                if (i === 1) obj.rotation.y = -0.12;
-                else if (i === 2) obj.rotation.y = 0.12;
-                cssScene.add(obj);
-                panelObjects.push(obj);
-            }
+  navBtns.forEach(b => b.classList.remove('active'));
+  navBtns[idx].classList.add('active');
 
-            // ---------- РЕЖИМ «РОБОЧИЙ СТІЛ» ----------
-            function createDesktopObjects() {
-                const geomCube = new THREE.BoxGeometry(0.25, 0.25, 0.25);
-                const geomSphere = new THREE.SphereGeometry(0.2, 16, 16);
-                const colors = [0xff5522, 0x22aaff, 0xffdd44, 0xff44aa, 0x44ffaa];
-                for (let i = 0; i < 20; i++) {
-                    const geo = i % 2 === 0 ? geomCube : geomSphere;
-                    const mat = new THREE.MeshStandardMaterial({ color: colors[i % colors.length], emissive: new THREE.Color(0x111111) });
-                    const mesh = new THREE.Mesh(geo, mat);
-                    mesh.position.set((Math.random() - 0.5) * 8, Math.random() * 3 + 0.5, (Math.random() - 0.5) * 6 - 4);
-                    mesh.castShadow = true; mesh.receiveShadow = true;
-                    mesh.userData.isDesktopObj = true;
-                    mesh.visible = false;
-                    webglScene.add(mesh);
-                    desktopObjects.push(mesh);
-                }
-            }
-            createDesktopObjects();
+  document.getElementById('section-label').textContent = sectionLabels[idx];
+  camTargetZ = panelCamZ[idx];
+  if (idx === 0) startCounters();
+}
 
-            const exitBtn = document.getElementById('desktop-exit');
-            exitBtn.addEventListener('click', () => { if (desktopMode) toggleDesktopMode(); });
+// ============================================================
+//  COUNTERS
+// ============================================================
+function animateCounter(el) {
+  const target = +el.dataset.target;
+  const duration = 1600;
+  const step = Math.ceil(target / (duration/16));
+  let current = 0;
+  const tick = () => {
+    current = Math.min(current + step, target);
+    el.textContent = current.toLocaleString('ru');
+    if (current < target) requestAnimationFrame(tick);
+  };
+  tick();
+}
+function startCounters() {
+  document.querySelectorAll('.count-num').forEach(el => {
+    el.textContent = '0';
+    animateCounter(el);
+  });
+}
 
-            function toggleDesktopMode() {
-                desktopMode = !desktopMode;
-                if (desktopMode) {
-                    rainPoints.visible = false;
-                    panelObjects.forEach(p => p.visible = false);
-                    desktopObjects.forEach(o => o.visible = true);
-                    document.getElementById('nav-buttons').style.pointerEvents = 'none';
-                    document.getElementById('logo-hud').style.opacity = '0.6';
-                    exitBtn.style.display = 'block';
-                    gsap.to(targetCamPos, { x: 0, y: 3, z: 7, duration: 1.2, ease: 'power2.inOut' });
-                    gsap.to(targetLookAt, { x: 0, y: 0, z: -2, duration: 1.2, ease: 'power2.inOut' });
-                } else {
-                    rainPoints.visible = true;
-                    panelObjects.forEach(p => p.visible = true);
-                    desktopObjects.forEach(o => o.visible = false);
-                    document.getElementById('nav-buttons').style.pointerEvents = 'auto';
-                    document.getElementById('logo-hud').style.opacity = '1';
-                    exitBtn.style.display = 'none';
-                    goToPanel(currentPanel);
-                }
-            }
-            document.getElementById('logo-hud').addEventListener('click', toggleDesktopMode);
+// ============================================================
+//  SURVEY
+// ============================================================
+let selectedRating = null;
+function selectSurvey(btn, val) {
+  document.querySelectorAll('.survey-opt').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedRating = val;
+  document.getElementById('survey-send').style.display = 'block';
+}
+function sendSurvey() {
+  if (!selectedRating) return;
+  document.getElementById('survey-opts').style.display = 'none';
+  document.getElementById('survey-send').style.display = 'none';
+  document.getElementById('survey-sent').style.display = 'block';
+}
 
-            // ---------- ПЕРЕТЯГУВАННЯ ОБ'ЄКТІВ (з offset) ----------
-            const raycaster = new THREE.Raycaster();
-            const mouse = new THREE.Vector2();
-            const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+// ============================================================
+//  TICKER
+// ============================================================
+const phrases = [
+  '🔒 Ваши данные — ваша крепость.',
+  '⚡ Реанимация вместо утилизации.',
+  '🛠️ Кремний не прощает ошибок — мы не делаем допущений.',
+  '📡 ОДЕССА NODE — ОНЛАЙН',
+  '🔧 Проверенные решения для нестабильного мира.',
+  '💾 Мы чиним железо, а не торгуем вашими данными.',
+  '✅ Гарантия на все работы — до 12 месяцев.',
+  '🌀 Голографический интерфейс активен.',
+  '🖥️ Dead Space style UI online.'
+];
+const track = document.getElementById('ticker-track');
+const doubled = [...phrases, ...phrases];
+track.innerHTML = doubled.map(p => `<span class="ticker-item">${p}</span>`).join('');
 
-            webglRenderer.domElement.addEventListener('pointerdown', onPointerDown);
-            window.addEventListener('pointermove', onPointerMove);
-            window.addEventListener('pointerup', onPointerUp);
+// ============================================================
+//  BOOT
+// ============================================================
+const bootMessages = [
+  {text:'BIOS v2.14 → REANIMATOR 3D HOLO initializing...', cls:''},
+  {text:'Loading THREE.js renderer...', cls:'ok'},
+  {text:'Matrix rain: 3D MODE + enhanced', cls:'ok'},
+  {text:'Holographic rings: ACTIVE', cls:'ok'},
+  {text:'Client database: CONNECTED', cls:'ok'},
+  {text:'Guarantee engine: ACTIVE', cls:'ok'},
+  {text:'⚠ Legacy HDD detected — upgrade recommended', cls:'warn'},
+  {text:'Node ODESSA ready. Accepting patients.', cls:'ok'},
+];
 
-            function getIntersection(event) {
-                const rect = webglRenderer.domElement.getBoundingClientRect();
-                mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-                mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-                raycaster.setFromCamera(mouse, camera);
-            }
-
-            function onPointerDown(event) {
-                getIntersection(event);
-                if (logoMesh) {
-                    const intersects = raycaster.intersectObject(logoMesh);
-                    if (intersects.length > 0) {
-                        toggleDesktopMode();
-                        return;
-                    }
-                }
-                if (!desktopMode) return;
-                const intersects = raycaster.intersectObjects(desktopObjects);
-                if (intersects.length > 0) {
-                    draggedObject = intersects[0].object;
-                    const target = new THREE.Vector3();
-                    raycaster.ray.intersectPlane(groundPlane, target);
-                    dragOffset.copy(draggedObject.position).sub(target);
-                    webglRenderer.domElement.style.cursor = 'grabbing';
-                }
-            }
-
-            function onPointerMove(event) {
-                if (!draggedObject) return;
-                getIntersection(event);
-                const target = new THREE.Vector3();
-                if (raycaster.ray.intersectPlane(groundPlane, target)) {
-                    draggedObject.position.copy(target.add(dragOffset));
-                    draggedObject.position.y += 0.4;
-                }
-            }
-
-            function onPointerUp() {
-                if (draggedObject) {
-                    draggedObject = null;
-                    webglRenderer.domElement.style.cursor = '';
-                }
-            }
-
-            // ---------- ГІРОСКОП ----------
-            const gyroBtn = document.getElementById('gyro-permission');
-            function enableGyro() {
-                if (typeof DeviceOrientationEvent !== 'undefined') {
-                    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-                        DeviceOrientationEvent.requestPermission().then(state => {
-                            if (state === 'granted') { gyroEnabled = true; gyroBtn.style.display = 'none'; }
-                        }).catch(() => {});
-                    } else {
-                        gyroEnabled = true;
-                        gyroBtn.style.display = 'none';
-                    }
-                }
-            }
-            if (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-                gyroBtn.style.display = 'block';
-                gyroBtn.addEventListener('click', enableGyro);
-            }
-            window.addEventListener('deviceorientation', (event) => {
-                if (!gyroEnabled) return;
-                const beta = Math.max(-30, Math.min(30, event.beta || 0)) / 30;
-                const gamma = Math.max(-30, Math.min(30, event.gamma || 0)) / 30;
-                gyroOffsetX = gamma * GYRO_MAX;
-                gyroOffsetY = -beta * GYRO_MAX * 0.6;
-            }, { passive: true });
-
-            // ---------- НАВІГАЦІЯ МІЖ ПАНЕЛЯМИ ----------
-            window.goToPanel = function(index) {
-                if (isAnimating || index === currentPanel || desktopMode) return;
-                isAnimating = true;
-                const pos = CAM_BASE[index];
-                const look = { x: PANEL_POS[index].x, y: 0, z: PANEL_POS[index].z };
-                const maxRoll = index === 1 ? 0.2 : (index === 2 ? -0.2 : 0);
-                const rollObj = { value: 0 };
-                const tl = gsap.timeline({ onComplete: () => { isAnimating = false; currentPanel = index; camera.up.set(0, 1, 0); } });
-                tl.to(rollObj, { value: maxRoll, duration: 0.4, ease: 'power2.out' }, 0);
-                tl.to(rollObj, { value: -maxRoll * 0.5, duration: 0.5, ease: 'power2.inOut' }, 0.5);
-                tl.to(rollObj, { value: 0, duration: 0.4, ease: 'power2.out' }, 1.0);
-                tl.to(camera.position, {
-                    x: pos.x, y: pos.y, z: pos.z, duration: 1.4, ease: 'power2.inOut',
-                    onUpdate: () => {
-                        camera.up.set(Math.sin(rollObj.value), Math.cos(rollObj.value), 0).normalize();
-                        camera.lookAt(look.x, look.y, look.z);
-                    }
-                }, 0);
-                targetCamPos = { ...pos };
-                targetLookAt = { ...look };
-            };
-
-            // ---------- ГОЛОВНИЙ ЦИКЛ ----------
-            let lastTime = performance.now();
-            function animate() {
-                requestAnimationFrame(animate);
-                const now = performance.now();
-                const delta = (now - lastTime) / 1000;
-                lastTime = now;
-
-                uniforms.uTime.value += delta;
-
-                boardTimer += delta;
-                if (boardTimer > 3.0) {
-                    boardTimer = 0;
-                    drawCircuitBoard();
-                }
-
-                particleRing.rotation.y += 0.002;
-                ring.rotation.z += 0.001;
-
-                const offX = isAnimating ? gyroOffsetX * 0.2 : gyroOffsetX;
-                const offY = isAnimating ? gyroOffsetY * 0.2 : gyroOffsetY;
-                camera.position.set(targetCamPos.x + offX, targetCamPos.y + offY, targetCamPos.z);
-                camera.lookAt(targetLookAt.x, targetLookAt.y, targetLookAt.z);
-
-                composer.render();
-                cssRenderer.render(cssScene, camera);
-            }
-
-            window.addEventListener('resize', () => {
-                const w = window.innerWidth, h = window.innerHeight;
-                camera.aspect = w / h;
-                camera.updateProjectionMatrix();
-                webglRenderer.setSize(w, h);
-                cssRenderer.setSize(w, h);
-                composer.setSize(w, h);
-            });
-
-            lastTime = performance.now();
-            animate();
-        })();
-    </script>
+function runBoot() {
+  const wrap = document.getElementById('boot-lines');
+  const fill = document.getElementById('boot-bar-fill');
+  let i = 0;
+  const step = () => {
+    if (i >= bootMessages.length) {
+      fill.style.width = '100%';
+      setTimeout(() => {
+        document.getElementById('boot-screen').classList.add('hidden');
+        startCounters();
+      }, 500);
+      return;
+    }
+    const m = bootMessages[i];
+    const div = document.createElement('div');
+    div.className = 'boot-line' + (m.cls ? ' ' + m.cls : '');
+    div.textContent = '> ' + m.text;
+    div.style.animationDelay = '0s';
+    wrap.appendChild(div);
+    fill.style.width = ((i + 1) / bootMessages.length * 95) + '%';
+    wrap.scrollTop = wrap.scrollHeight;
+    i++;
+    setTimeout(step, 180 + Math.random() * 120);
+  };
+  step();
+}
+runBoot();
+</script>
 </body>
-</html>
+                                    </html>
